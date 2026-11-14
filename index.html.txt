@@ -3465,5 +3465,5 @@
         startNewGame();
     };
     </script>
-</body>
+<script src="optimizer.js"></script>
 </html>
