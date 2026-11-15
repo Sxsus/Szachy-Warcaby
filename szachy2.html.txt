@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krypta Warcabów — Moduł 2: Polskie Warcaby & P2P</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #0c0a0f;
+            --bg-panel: #16131c;
+            --bg-header: #110e15;
+            --text-main: #b5afc0;
+            --text-bright: #f5f2fa;
+            --accent: #2e8b57;
+            --accent-hover: #3cb371;
+            --gold: #d4af37;
+            --board-light: #d1b89d;
+            --board-dark: #5c4033;
+            --border: #2a2433;
+        }
+        [data-theme="light"] {
+            --bg-main: #f3f4f6;
+            --bg-panel: #ffffff;
+            --bg-header: #e5e7eb;
+            --text-main: #4b5563;
+            --text-bright: #111827;
+            --accent: #2b6cb0;
+            --accent-hover: #3182ce;
+            --gold: #d97706;
+            --board-light: #e2e8f0;
+            --board-dark: #4a5568;
+            --border: #d1d5db;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: var(--bg-main); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; transition: 0.3s; }
+        
+        header { background: var(--bg-header); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .brand { font-size: 1.2rem; font-weight: 800; color: var(--text-bright); display: flex; gap: 8px; align-items: center; }
+        .brand span { color: var(--accent); }
+        
+        main { flex-grow: 1; max-width: 1300px; width: 100%; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+
+        #setup-screen { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 600px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 28px; }
+        #setup-screen h2 { color: var(--text-bright); }
+        
+        #game-screen { display: none; width: 100%; gap: 18px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+
+        .board-box { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+        .player-strip { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: var(--bg-header); border-radius: 6px; }
+        .clock { font-family: monospace; font-size: 1.2rem; font-weight: 800; background: var(--bg-main); padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border); color: var(--text-bright); }
+
+        .board-wrap { position: relative; width: 480px; height: 480px; }
+        .board { display: grid; grid-template-columns: repeat(8, 60px); grid-template-rows: repeat(8, 60px); border: 2px solid var(--border); user-select: none; }
+        .sq { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; cursor: pointer; position: relative; }
+        .sq.light { background: var(--board-light); }
+        .sq.dark { background: var(--board-dark); }
+        .sq.selected { box-shadow: inset 0 0 0 4px #ffd700; }
+        .sq.last-move { background: rgba(212, 175, 55, 0.35) !important; }
+
+        .side-panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; width: 360px; height: 570px; display: flex; flex-direction: column; overflow: hidden; }
+        .side-header { background: var(--bg-header); padding: 12px; font-weight: 700; color: var(--text-bright); border-bottom: 1px solid var(--border); }
+        .chat-log { flex-grow: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; }
+        .msg { padding: 8px 10px; border-radius: 6px; max-width: 85%; line-height: 1.35; }
+        .msg.bot { background: rgba(46, 139, 87, 0.2); border-left: 3px solid var(--accent); color: var(--text-bright); align-self: flex-start; }
+        .msg.user { background: rgba(128, 128, 128, 0.2); color: var(--text-bright); align-self: flex-end; }
+
+        .btn { background: var(--accent); color: #fff; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; transition: 0.2s; text-align: center; text-decoration: none; font-size: 0.9rem; }
+        .btn:hover { background: var(--accent-hover); }
+        .btn-sec { background: var(--bg-header); color: var(--text-bright); border: 1px solid var(--border); }
+        .btn-sec:hover { border-color: var(--text-main); }
+
+        select, input { width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-bright); border-radius: 6px; margin-top: 4px; }
+        
+        .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+        .modal-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px; max-width: 480px; width: 100%; display: flex; flex-direction: column; gap: 14px; }
+        .modal-card h2 { color: var(--text-bright); }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">☩ KRYPTA <span>POLSKIE WARCABY & P2P</span></div>
+    <a href="index.html" class="btn btn-sec" style="padding: 6px 14px; font-size:0.82rem;">← Powrót do Huba</a>
+</header>
+
+<main>
+    <div id="setup-screen">
+        <h2>Konfiguracja Areny Warcabowej</h2>
+        <label>Tryb Rozgrywki:
+            <select id="sel-mode" onchange="toggleP2PInput(this.value)">
+                <option value="bot">Pojedynek z Botem Warcabowym</option>
+                <option value="p2p">Gracz Online (PeerJS — Link P2P)</option>
+            </select>
+        </label>
+        <div id="p2p-box" style="display:none; flex-direction:column; gap:8px;">
+            <p style="font-size:0.85rem;">Twój kod połączenia P2P: <strong id="my-peer-id" style="color:var(--gold);">Generowanie...</strong></p>
+            <label>Połącz się z kodem znajomego:
+                <div style="display:flex; gap:6px;">
+                    <input type="text" id="friend-peer-id" placeholder="Wpisz kod peer znajomego...">
+                    <button class="btn" onclick="connectToPeer()">Połącz</button>
+                </div>
+            </label>
+        </div>
+        <label>Zasady i Warianty:
+            <select id="sel-variant">
+                <option value="polish">Polskie Warcaby 8x8 (Zasada Dmuchnięcia + Bicie wstecz)</option>
+                <option value="classic">Klasyczne Warcaby Angielskie</option>
+            </select>
+        </label>
+        <button class="btn" onclick="startCheckersMatch()">Rozpocznij Wojnę Warcabową</button>
+    </div>
+
+    <div id="game-screen">
+        <div class="board-box">
+            <div class="player-strip">
+                <span id="opp-name" style="font-weight:700; color:var(--text-bright);">Przeciwnik</span>
+                <div class="clock" id="clock-black">10:00</div>
+            </div>
+
+            <div class="board-wrap">
+                <div class="board" id="checkers-board"></div>
+            </div>
+
+            <div class="player-strip">
+                <span id="me-name" style="font-weight:700; color:var(--text-bright);">Szymon</span>
+                <div class="clock" id="clock-white">10:00</div>
+            </div>
+
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button class="btn btn-sec" onclick="simulateDisconnectTest()">⏳ Symuluj Wyjście (15s)</button>
+                <button class="btn" style="background:#991b1b;" onclick="resignCheckers()">🏳️ Poddaj</button>
+                <button class="btn btn-sec" onclick="backToCheckersSetup()">🚪 Menu</button>
+            </div>
+        </div>
+
+        <div class="side-panel">
+            <div class="side-header">💬 Czat & Dmuchnięcie (Log)</div>
+            <div class="chat-log" id="checkers-chat"></div>
+            <div style="padding:10px; border-top:1px solid var(--border); display:flex; gap:6px;">
+                <input type="text" id="checkers-chat-txt" placeholder="Napisz wiadomość..." onkeydown="if(event.key==='Enter') sendCheckersChat()">
+                <button class="btn" onclick="sendCheckersChat()">OK</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div class="modal-bg" id="modal-verdict">
+    <div class="modal-card">
+        <h2 id="v-title">Werdykt Bitwy</h2>
+        <p id="v-sub" style="font-size:0.9rem;"></p>
+        <button class="btn" onclick="closeCheckersVerdict()">Powrót do Menu</button>
+    </div>
+</div>
+
+<script>
+let board = [];
+let turn = 'w';
+let selectedSq = null;
+let matchActive = false;
+let isP2P = false;
+let peer = null, conn = null;
+let timeW = 600, timeB = 600, timer = null;
+let disconnectTimer = null;
+
+function syncTheme() {
+    try {
+        const raw = localStorage.getItem('cryptic_chess_v3');
+        if (raw) {
+            const st = JSON.parse(raw);
+            if (st.settings && st.settings.lightTheme) document.documentElement.setAttribute('data-theme', 'light');
+            document.getElementById('me-name').innerText = st.nick || 'Szymon';
+        }
+    } catch(e){}
+}
+
+function toggleP2PInput(val) {
+    isP2P = (val === 'p2p');
+    document.getElementById('p2p-box').style.display = isP2P ? 'flex' : 'none';
+    if (isP2P && !peer) initPeer();
+}
+
+function initPeer() {
+    peer = new Peer();
+    peer.on('open', id => {
+        document.getElementById('my-peer-id').innerText = id;
+    });
+    peer.on('connection', c => {
+        conn = c;
+        setupConnection();
+        logChat("P2P: Połączono z graczem!");
+    });
+}
+
+function connectToPeer() {
+    const id = document.getElementById('friend-peer-id').value.trim();
+    if (!id) return alert('Wpisz ID znajomego!');
+    conn = peer.connect(id);
+    setupConnection();
+}
+
+function setupConnection() {
+    conn.on('data', data => {
+        if (data.type === 'move') {
+            board = data.board;
+            turn = 'w';
+            renderCheckersBoard();
+        } else if (data.type === 'chat') {
+            logChat("Przeciwnik: " + data.text);
+        } else if (data.type === 'resign') {
+            endCheckersMatch(true, 'Przeciwnik poddał się!');
+        }
+    });
+}
+
+function startCheckersMatch() {
+    syncTheme();
+    matchActive = true;
+    turn = 'w';
+    selectedSq = null;
+    timeW = 600; timeB = 600;
+
+    board = Array(8).fill(null).map(() => Array(8).fill(null));
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            if ((r + c) % 2 === 1) {
+                if (r < 3) board[r][c] = { color: 'b', king: false };
+                if (r > 4) board[r][c] = { color: 'w', king: false };
+            }
+        }
+    }
+
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'flex';
+    document.getElementById('checkers-chat').innerHTML = '';
+    
+    logChat("Bitwa warcabowa rozpoczęta! Pilnuj zasady dmuchnięcia.");
+    renderCheckersBoard();
+    startCheckersClock();
+}
+
+function getAllCaptures(color) {
+    let caps = [];
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const p = board[r][c];
+            if (p && p.color === color) {
+                const dirs = [[1,1],[1,-1],[-1,1],[-1,-1]];
+                for (let [dr, dc] of dirs) {
+                    if (!p.king) {
+                        const mr = r + dr, mc = c + dc, lr = r + 2*dr, lc = c + 2*dc;
+                        if (lr >= 0 && lr < 8 && lc >= 0 && lc < 8) {
+                            if (board[mr][mc] && board[mr][mc].color !== color && !board[lr][lc]) {
+                                caps.push({ from: [r,c], to: [lr,lc], mid: [mr,mc] });
+                            }
+                        }
+                    } else {
+                        let step = 1, enemy = null;
+                        while (r + step*dr >= 0 && r + step*dr < 8 && c + step*dc >= 0 && c + step*dc < 8) {
+                            const cr = r + step*dr, cc = c + step*dc;
+                            const cell = board[cr][cc];
+                            if (!cell) {
+                                if (enemy) caps.push({ from: [r,c], to: [cr,cc], mid: enemy });
+                            } else if (cell.color === color) {
+                                break;
+                            } else {
+                                if (enemy) break;
+                                enemy = [cr, cc];
+                            }
+                            step++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return caps;
+}
+
+function renderCheckersBoard() {
+    const bEl = document.getElementById('checkers-board');
+    bEl.innerHTML = '';
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const sq = document.createElement('div');
+            sq.className = `sq ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+            if (selectedSq && selectedSq[0] === r && selectedSq[1] === c) sq.classList.add('selected');
+
+            const p = board[r][c];
+            if (p) {
+                const span = document.createElement('span');
+                span.innerText = p.color === 'w' ? (p.king ? '👑' : '⚪') : (p.king ? '👹' : '⚫');
+                sq.appendChild(span);
+            }
+            sq.onclick = () => handleCheckersClick(r, c);
+            bEl.appendChild(sq);
+        }
+    }
+}
+
+function handleCheckersClick(r, c) {
+    if (!matchActive || turn !== 'w') return;
+    const clicked = board[r][c];
+    if (clicked && clicked.color === 'w') {
+        selectedSq = [r, c];
+        renderCheckersBoard();
+        return;
+    }
+    if (!selectedSq) return;
+
+    const [sr, sc] = selectedSq;
+    const piece = board[sr][sc];
+    const caps = getAllCaptures('w');
+    const chosenCap = caps.find(cp => cp.from[0] === sr && cp.from[1] === sc && cp.to[0] === r && cp.to[1] === c);
+
+    if (chosenCap) {
+        board[r][c] = piece;
+        board[sr][sc] = null;
+        board[chosenCap.mid[0]][chosenCap.mid[1]] = null;
+        if (r === 0) piece.king = true;
+        if (window.OptimizedAudio) window.OptimizedAudio.playClick(180, 'sawtooth');
+        selectedSq = null;
+        turn = 'b';
+        renderCheckersBoard();
+        if (isP2P && conn) conn.send({ type: 'move', board });
+        else setTimeout(botCheckersMove, 600);
+    } else {
+        const dr = r - sr, dc = c - sc;
+        const valid = !piece.king ? (dr === -1 && Math.abs(dc) === 1 && !board[r][c]) : (Math.abs(dr) === Math.abs(dc) && !board[r][c]);
+        if (valid) {
+            board[r][c] = piece;
+            board[sr][sc] = null;
+            if (r === 0) piece.king = true;
+
+            // ZASADA DMUCHNIĘCIA
+            if (caps.length > 0) {
+                const target = caps[0].from;
+                board[target[0]][target[1]] = null;
+                logChat("💨 DMUCHNIĘCIE! Zignorowano przymusowe bicie i tracisz pionka!");
+                if (window.OptimizedAudio) window.OptimizedAudio.playClick(100, 'square');
+            } else {
+                if (window.OptimizedAudio) window.OptimizedAudio.playClick(320);
+            }
+            selectedSq = null;
+            turn = 'b';
+            renderCheckersBoard();
+            if (isP2P && conn) conn.send({ type: 'move', board });
+            else setTimeout(botCheckersMove, 600);
+        }
+    }
+}
+
+function botCheckersMove() {
+    if (!matchActive) return;
+    const caps = getAllCaptures('b');
+    if (caps.length > 0) {
+        const cp = caps[0];
+        const p = board[cp.from[0]][cp.from[1]];
+        board[cp.to[0]][cp.to[1]] = p;
+        board[cp.from[0]][cp.from[1]] = null;
+        board[cp.mid[0]][cp.mid[1]] = null;
+        if (cp.to[0] === 7) p.king = true;
+    } else {
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const p = board[r][c];
+                if (p && p.color === 'b') {
+                    for (let dc of [-1, 1]) {
+                        if (r + 1 < 8 && c + dc >= 0 && c + dc < 8 && !board[r+1][c+dc]) {
+                            board[r+1][c+dc] = p;
+                            board[r][c] = null;
+                            if (r + 1 === 7) p.king = true;
+                            turn = 'w';
+                            renderCheckersBoard();
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    turn = 'w';
+    renderCheckersBoard();
+}
+
+function startCheckersClock() {
+    clearInterval(timer);
+    timer = setInterval(() => {
+        if (!matchActive) return;
+        if (turn === 'w') timeW--; else timeB--;
+        document.getElementById('clock-white').innerText = `${Math.floor(timeW/60)}:${String(timeW%60).padStart(2,'0')}`;
+        document.getElementById('clock-black').innerText = `${Math.floor(timeB/60)}:${String(timeB%60).padStart(2,'0')}`;
+        if (timeW <= 0) endCheckersMatch(false, 'Koniec czasu!');
+        if (timeB <= 0) endCheckersMatch(true, 'Czas przeciwnika minął!');
+    }, 1000);
+}
+
+function simulateDisconnectTest() {
+    logChat("⚠️ Symulacja rozłączenia. Oczekiwanie 15 sekund na powrót...");
+    let left = 15;
+    disconnectTimer = setInterval(() => {
+        left--;
+        if (left <= 0 || !matchActive) {
+            clearInterval(disconnectTimer);
+            if (matchActive) endCheckersMatch(true, 'Walkower (Przeciwnik opuścił grę na 15s)');
+        }
+    }, 1000);
+}
+
+function endCheckersMatch(won, reason) {
+    matchActive = false;
+    clearInterval(timer);
+    clearInterval(disconnectTimer);
+
+    try {
+        const raw = localStorage.getItem('cryptic_chess_v3');
+        if (raw) {
+            const st = JSON.parse(raw);
+            st.elo.checkersBot += (won === true ? 16 : (won === false ? -12 : 0));
+            if (won) st.shards += 30;
+            localStorage.setItem('cryptic_chess_v3', JSON.stringify(st));
+        }
+    } catch(e){}
+
+    document.getElementById('v-title').innerText = won ? `Zwycięstwo! (${reason})` : `Porażka (${reason})`;
+    document.getElementById('v-sub').innerText = won ? 'Zdobyto +30 Odłamków Cienia!' : 'Bitwa przegrana.';
+    document.getElementById('modal-verdict').style.display = 'flex';
+}
+
+function closeCheckersVerdict() {
+    document.getElementById('modal-verdict').style.display = 'none';
+    backToCheckersSetup();
+}
+
+function backToCheckersSetup() {
+    matchActive = false;
+    clearInterval(timer);
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('setup-screen').style.display = 'flex';
+}
+
+function resignCheckers() {
+    if (isP2P && conn) conn.send({ type: 'resign' });
+    endCheckersMatch(false, 'Poddanie partii');
+}
+
+function logChat(txt) {
+    const log = document.getElementById('checkers-chat');
+    const div = document.createElement('div');
+    div.className = 'msg bot';
+    div.innerText = txt;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+}
+
+function sendCheckersChat() {
+    const inp = document.getElementById('checkers-chat-txt');
+    if (!inp.value.trim()) return;
+    const log = document.getElementById('checkers-chat');
+    const div = document.createElement('div');
+    div.className = 'msg user';
+    div.innerText = inp.value;
+    log.appendChild(div);
+    if (isP2P && conn) conn.send({ type: 'chat', text: inp.value });
+    inp.value = '';
+    log.scrollTop = log.scrollHeight;
+}
+
+syncTheme();
+</script>
+<script src="optimizer.js"></script>
+</body>
+</html>

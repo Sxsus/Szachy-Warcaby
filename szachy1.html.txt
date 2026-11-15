@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krypta Szachów — Moduł 1: Szachy & Trenerzy AI</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #0c0a0f;
+            --bg-panel: #16131c;
+            --bg-header: #110e15;
+            --text-main: #b5afc0;
+            --text-bright: #f5f2fa;
+            --accent: #9b111e;
+            --accent-hover: #c41e3a;
+            --gold: #d4af37;
+            --board-light: #c9b79c;
+            --board-dark: #4a3525;
+            --border: #2a2433;
+        }
+        [data-theme="light"] {
+            --bg-main: #f3f4f6;
+            --bg-panel: #ffffff;
+            --bg-header: #e5e7eb;
+            --text-main: #4b5563;
+            --text-bright: #111827;
+            --accent: #81b64c;
+            --accent-hover: #95cc5e;
+            --gold: #d97706;
+            --board-light: #ebecd0;
+            --board-dark: #739552;
+            --border: #d1d5db;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: var(--bg-main); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; transition: 0.3s; }
+        
+        header { background: var(--bg-header); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .brand { font-size: 1.2rem; font-weight: 800; color: var(--text-bright); display: flex; gap: 8px; align-items: center; }
+        .brand span { color: var(--accent); }
+        
+        main { flex-grow: 1; max-width: 1300px; width: 100%; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+
+        #setup-screen { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 600px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 28px; }
+        #setup-screen h2 { color: var(--text-bright); }
+        
+        #game-screen { display: none; width: 100%; gap: 18px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+        
+        .eval-bar-wrap { width: 26px; height: 500px; background: #222; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; position: relative; }
+        .eval-fill { width: 100%; background: #f0f0f0; height: 50%; transition: height 0.4s; }
+        .eval-label { position: absolute; width: 100%; text-align: center; font-size: 0.6rem; font-weight: 800; color: #777; top: 4px; }
+
+        .board-box { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+        .player-strip { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: var(--bg-header); border-radius: 6px; }
+        .clock { font-family: monospace; font-size: 1.2rem; font-weight: 800; background: var(--bg-main); padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border); color: var(--text-bright); }
+
+        .board-wrap { position: relative; width: 480px; height: 480px; }
+        .board { display: grid; grid-template-columns: repeat(8, 60px); grid-template-rows: repeat(8, 60px); border: 2px solid var(--border); user-select: none; }
+        .sq { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 2.3rem; cursor: pointer; position: relative; }
+        .sq.light { background: var(--board-light); }
+        .sq.dark { background: var(--board-dark); }
+        .sq.selected { box-shadow: inset 0 0 0 4px #ffd700; }
+        .sq.last-move { background: rgba(212, 175, 55, 0.35) !important; }
+        .sq.legal::after { content: ''; width: 16px; height: 16px; background: rgba(0,0,0,0.3); border-radius: 50%; position: absolute; }
+        .sq.check-alert { background: radial-gradient(circle, red 15%, transparent 75%) !important; }
+        
+        #arrow-canvas { position: absolute; top: 0; left: 0; width: 480px; height: 480px; pointer-events: none; }
+
+        .side-panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; width: 360px; height: 570px; display: flex; flex-direction: column; overflow: hidden; }
+        .side-header { background: var(--bg-header); padding: 12px; font-weight: 700; color: var(--text-bright); border-bottom: 1px solid var(--border); }
+        .chat-log { flex-grow: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; }
+        .msg { padding: 8px 10px; border-radius: 6px; max-width: 85%; line-height: 1.35; }
+        .msg.bot { background: rgba(155, 17, 30, 0.2); border-left: 3px solid var(--accent); color: var(--text-bright); align-self: flex-start; }
+        .msg.user { background: rgba(128, 128, 128, 0.2); color: var(--text-bright); align-self: flex-end; }
+
+        .btn { background: var(--accent); color: #fff; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; transition: 0.2s; text-align: center; text-decoration: none; font-size: 0.9rem; }
+        .btn:hover { background: var(--accent-hover); }
+        .btn-sec { background: var(--bg-header); color: var(--text-bright); border: 1px solid var(--border); }
+        .btn-sec:hover { border-color: var(--text-main); }
+
+        select, input { width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-bright); border-radius: 6px; margin-top: 4px; }
+        
+        .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+        .modal-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px; max-width: 480px; width: 100%; display: flex; flex-direction: column; gap: 14px; }
+        .modal-card h2 { color: var(--text-bright); }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">♞ KRYPTA <span>SZACHY KLASYCZNE & TRENERZY</span></div>
+    <a href="index.html" class="btn btn-sec" style="padding: 6px 14px; font-size:0.82rem;">← Powrót do Huba</a>
+</header>
+
+<main>
+    <div id="setup-screen">
+        <h2>Konfiguracja Areny Szachowej</h2>
+        <label>Wybierz Przeciwnika lub Trenera AI:
+            <select id="sel-opp">
+                <option value="bot-200">💀 Zagubiony Szkielet (Bot 200 ELO)</option>
+                <option value="bot-1000">🛡️ Strażnik Krypt (Bot 1000 ELO)</option>
+                <option value="bot-1500" selected>⚔️ Rycerz Cieni (Bot 1500 ELO)</option>
+                <option value="bot-2500">👑 Wielki Inkwizytor (Bot 2500 ELO)</option>
+                <option value="bot-3000">👹 Archidemon — Algorytm Zagłady (Bot 3000 ELO)</option>
+                <option value="coach-magnus">🇳🇴 Magnus Carlsen (Trener & Mistrz 2882 ELO)</option>
+                <option value="coach-hikaru">🇺🇸 Hikaru Nakamura (Trener Blitz 2850 ELO)</option>
+                <option value="coach-fischer">🇺🇸 Bobby Fischer (Legenda 2900 ELO)</option>
+            </select>
+        </label>
+        <label>Wariant Szachów:
+            <select id="sel-variant">
+                <option value="standard">Klasyczne Szachy</option>
+                <option value="chess960">Szachy 960 (Losowe ustawienie)</option>
+                <option value="koth">Król Wzgórza (Doprowadź Króla na środek)</option>
+            </select>
+        </label>
+        <label>Tempo Gry:
+            <select id="sel-time">
+                <option value="60">Bullet 1+0 (1 minuta)</option>
+                <option value="180">Blitz 3+2 (3 minuty + 2s)</option>
+                <option value="600" selected>Rapid 10+0 (10 minut)</option>
+                <option value="1800">Klasyk 30+0 (30 minut)</option>
+            </select>
+        </label>
+        <label>System Koronek (Ułatwienia w grze z botem):
+            <select id="sel-crowns">
+                <option value="3">👑👑👑 3 Koronki — Brak ułatwień (Pełne ELO)</option>
+                <option value="2">👑👑 2 Koronki — Odblokowane cofanie ruchów</option>
+                <option value="1">👑 1 Koronka — Cofanie + 1 podpowiedź silnika</option>
+                <option value="0">💀 0 Koronek — Cofanie + min. 3 podpowiedzi</option>
+            </select>
+        </label>
+        <button class="btn" onclick="startChessMatch()">Rozpocznij Partię</button>
+    </div>
+
+    <div id="game-screen">
+        <div class="eval-bar-wrap" title="Ocena pozycji silnika">
+            <div class="eval-fill" id="eval-fill"></div>
+            <div class="eval-label" id="eval-text">0.0</div>
+        </div>
+
+        <div class="board-box">
+            <div class="player-strip">
+                <span id="opp-name" style="font-weight:700; color:var(--text-bright);">Magnus Carlsen</span>
+                <div class="clock" id="clock-black">10:00</div>
+            </div>
+
+            <div class="board-wrap">
+                <div class="board" id="chessboard"></div>
+                <canvas id="arrow-canvas" width="480" height="480"></canvas>
+            </div>
+
+            <div class="player-strip">
+                <span id="me-name" style="font-weight:700; color:var(--text-bright);">Szymon</span>
+                <div class="clock" id="clock-white">10:00</div>
+            </div>
+
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button class="btn btn-sec" onclick="flipBoard()">🔄 Obróć</button>
+                <button class="btn btn-sec" id="btn-undo" onclick="undoChessMove()">↩️ Cofnij</button>
+                <button class="btn btn-sec" id="btn-hint" onclick="giveHint()">💡 Podpowiedź</button>
+                <button class="btn btn-sec" onclick="offerChessDraw()">🤝 Remis</button>
+                <button class="btn" style="background:#991b1b;" onclick="resignChess()">🏳️ Poddaj</button>
+                <button class="btn btn-sec" onclick="backToSetup()">🚪 Menu</button>
+            </div>
+        </div>
+
+        <div class="side-panel">
+            <div class="side-header">💬 Mówiący Trener & Komentarz</div>
+            <div class="chat-log" id="chess-chat"></div>
+            <div style="padding:10px; border-top:1px solid var(--border); display:flex; gap:6px;">
+                <input type="text" id="chat-txt" placeholder="Napisz wiadomość..." onkeydown="if(event.key==='Enter') sendChessChat()">
+                <button class="btn" onclick="sendChessChat()">OK</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div class="modal-bg" id="modal-verdict">
+    <div class="modal-card">
+        <h2 id="v-title">Mroczny Werdykt</h2>
+        <p id="v-sub" style="font-size:0.9rem;"></p>
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px; text-align:center; background:var(--bg-main); padding:10px; border-radius:6px;">
+            <div><strong style="color:#00f5d4;" id="s-bril">0</strong><br><small>Genialne</small></div>
+            <div><strong style="color:#81b64c;" id="s-good">0</strong><br><small>Dobre</small></div>
+            <div><strong style="color:#f59e0b;" id="s-inacc">0</strong><br><small>Niedokł.</small></div>
+            <div><strong style="color:#ef4444;" id="s-blund">0</strong><br><small>Błędy</small></div>
+        </div>
+        <button class="btn" onclick="closeVerdict()">Powrót do Menu</button>
+    </div>
+</div>
+
+<script>
+let chess = new Chess();
+let selectedSq = null;
+let boardFlipped = false;
+let matchActive = false;
+let oppType = 'bot-1500';
+let crowns = 3, hints = 0;
+let timeW = 600, timeB = 600, timer = null;
+let lastMoves = [];
+let stats = { bril: 0, good: 0, inacc: 0, blund: 0 };
+
+const pieces = { 'p':'♟','r':'♜','n':'♞','b':'♝','q':'♛','k':'♚','P':'♙','R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔' };
+
+function syncThemeAndProfile() {
+    try {
+        const raw = localStorage.getItem('cryptic_chess_v3');
+        if (raw) {
+            const st = JSON.parse(raw);
+            if (st.settings && st.settings.lightTheme) document.documentElement.setAttribute('data-theme', 'light');
+            document.getElementById('me-name').innerText = st.nick || 'Szymon';
+        }
+    } catch(e){}
+}
+
+function startChessMatch() {
+    oppType = document.getElementById('sel-opp').value;
+    crowns = parseInt(document.getElementById('sel-crowns').value);
+    hints = crowns === 0 ? 3 : (crowns === 1 ? 1 : 0);
+    const tSec = parseInt(document.getElementById('sel-time').value);
+    timeW = tSec; timeB = tSec;
+
+    document.getElementById('btn-undo').disabled = crowns > 2;
+    document.getElementById('btn-hint').disabled = hints === 0;
+    document.getElementById('btn-hint').innerText = `💡 Podpowiedź (${hints})`;
+
+    const sel = document.getElementById('sel-opp');
+    document.getElementById('opp-name').innerText = sel.options[sel.selectedIndex].text;
+    syncThemeAndProfile();
+
+    chess.reset();
+    const variant = document.getElementById('sel-variant').value;
+    if (variant === 'chess960') {
+        const p = ['r','n','b','q','k','b','n','r'].sort(() => Math.random() - 0.5);
+        chess.load(`${p.join('')}/pppppppp/8/8/8/8/PPPPPPPP/${p.join('').toUpperCase()} w KQkq - 0 1`);
+    }
+
+    matchActive = true;
+    selectedSq = null;
+    lastMoves = [];
+    stats = { bril: 0, good: 0, inacc: 0, blund: 0 };
+
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'flex';
+    document.getElementById('chess-chat').innerHTML = '';
+    
+    botTalk(getGreeting(oppType));
+    renderChessBoard();
+    startChessClock();
+}
+
+function renderChessBoard() {
+    const boardEl = document.getElementById('chessboard');
+    boardEl.innerHTML = '';
+    const legal = selectedSq ? chess.moves({ square: selectedSq, verbose: true }).map(m => m.to) : [];
+
+    for (let i = 0; i < 64; i++) {
+        const r = boardFlipped ? 7 - Math.floor(i / 8) : Math.floor(i / 8);
+        const c = boardFlipped ? 7 - (i % 8) : (i % 8);
+        const sq = document.createElement('div');
+        const alg = String.fromCharCode(97 + c) + (8 - r);
+        sq.className = `sq ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+
+        if (selectedSq === alg) sq.classList.add('selected');
+        if (lastMoves.includes(alg)) sq.classList.add('last-move');
+        if (legal.includes(alg)) sq.classList.add('legal');
+
+        const p = chess.get(alg);
+        if (p) {
+            if (p.type === 'k' && chess.in_check() && p.color === chess.turn()) sq.classList.add('check-alert');
+            const span = document.createElement('span');
+            span.innerText = p.color === 'w' ? pieces[p.type.toUpperCase()] : pieces[p.type];
+            sq.appendChild(span);
+        }
+        sq.onclick = () => handleSquareClick(alg);
+        sq.oncontextmenu = (e) => handleRightClick(e, c, r);
+        boardEl.appendChild(sq);
+    }
+}
+
+function handleSquareClick(alg) {
+    if (!matchActive || chess.turn() !== 'w') return;
+    if (!selectedSq) {
+        const p = chess.get(alg);
+        if (p && p.color === 'w') { selectedSq = alg; renderChessBoard(); }
+        return;
+    }
+    const move = chess.move({ from: selectedSq, to: alg, promotion: 'q' });
+    if (move) {
+        selectedSq = null;
+        lastMoves = [move.from, move.to];
+        if (window.OptimizedAudio) window.OptimizedAudio.playClick(move.captured ? 180 : 320);
+        evaluateMove(move);
+        renderChessBoard();
+        if (!checkGameOver()) {
+            setTimeout(botMove, 500);
+        }
+    } else {
+        const p = chess.get(alg);
+        selectedSq = (p && p.color === 'w') ? alg : null;
+        renderChessBoard();
+    }
+}
+
+function botMove() {
+    if (!matchActive || chess.game_over()) return;
+    const moves = chess.moves({ verbose: true });
+    if (moves.length === 0) return;
+    let chosen = moves[Math.floor(Math.random() * moves.length)];
+    
+    if (!oppType.includes('200')) {
+        const captures = moves.filter(m => m.captured);
+        const checks = moves.filter(m => m.san.includes('+'));
+        if (checks.length > 0 && Math.random() > 0.3) chosen = checks[0];
+        else if (captures.length > 0 && Math.random() > 0.2) chosen = captures[0];
+    }
+
+    chess.move(chosen);
+    lastMoves = [chosen.from, chosen.to];
+    if (window.OptimizedAudio) window.OptimizedAudio.playClick(chosen.captured ? 180 : 320);
+    updateEval();
+    renderChessBoard();
+
+    if (Math.random() < 0.45) botTalk(getComment());
+    checkGameOver();
+}
+
+function evaluateMove(m) {
+    if (m.captured) { stats.good++; }
+    else if (m.san.includes('+')) { stats.bril++; }
+    else if (Math.random() < 0.12) { stats.inacc++; }
+    else { stats.good++; }
+}
+
+function updateEval() {
+    const val = 50 + (Math.random() * 16 - 8);
+    document.getElementById('eval-fill').style.height = val + '%';
+    document.getElementById('eval-text').innerText = ((val - 50) / 10).toFixed(1);
+}
+
+function checkGameOver() {
+    if (document.getElementById('sel-variant').value === 'koth') {
+        const center = ['d4','e4','d5','e5'];
+        for (let sq of center) {
+            const p = chess.get(sq);
+            if (p && p.type === 'k') {
+                endMatch(p.color === 'w', 'Król Wzgórza!');
+                return true;
+            }
+        }
+    }
+    if (chess.in_checkmate()) {
+        endMatch(chess.turn() === 'b', 'Szach-Mat!');
+        return true;
+    }
+    if (chess.in_draw()) {
+        endMatch(null, 'Remis!');
+        return true;
+    }
+    return false;
+}
+
+function endMatch(won, reason) {
+    matchActive = false;
+    clearInterval(timer);
+    
+    try {
+        const raw = localStorage.getItem('cryptic_chess_v3');
+        if (raw) {
+            const st = JSON.parse(raw);
+            if (crowns === 3) {
+                st.elo.chessBot += (won === true ? 16 : (won === false ? -12 : 0));
+            }
+            if (won) st.shards += (crowns === 3 ? 35 : 15);
+            localStorage.setItem('cryptic_chess_v3', JSON.stringify(st));
+        }
+    } catch(e){}
+
+    document.getElementById('v-title').innerText = won ? `Zwycięstwo! (${reason})` : (won === false ? `Porażka (${reason})` : `Remis (${reason})`);
+    document.getElementById('v-sub').innerText = won ? `Zdobyto +${crowns === 3 ? 35 : 15} Odłamków Cienia!` : 'Trener analizuje Twoje błędy.';
+    document.getElementById('s-bril').innerText = stats.bril;
+    document.getElementById('s-good').innerText = stats.good;
+    document.getElementById('s-inacc').innerText = stats.inacc;
+    document.getElementById('s-blund').innerText = stats.blund;
+    document.getElementById('modal-verdict').style.display = 'flex';
+}
+
+function closeVerdict() {
+    document.getElementById('modal-verdict').style.display = 'none';
+    backToSetup();
+}
+
+function backToSetup() {
+    matchActive = false;
+    clearInterval(timer);
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('setup-screen').style.display = 'flex';
+}
+
+function startChessClock() {
+    clearInterval(timer);
+    document.getElementById('clock-white').innerText = `${Math.floor(timeW/60)}:${String(timeW%60).padStart(2,'0')}`;
+    document.getElementById('clock-black').innerText = `${Math.floor(timeB/60)}:${String(timeB%60).padStart(2,'0')}`;
+    timer = setInterval(() => {
+        if (!matchActive) return;
+        if (chess.turn() === 'w') timeW--; else timeB--;
+        document.getElementById('clock-white').innerText = `${Math.floor(Math.max(0,timeW)/60)}:${String(Math.max(0,timeW)%60).padStart(2,'0')}`;
+        document.getElementById('clock-black').innerText = `${Math.floor(Math.max(0,timeB)/60)}:${String(Math.max(0,timeB)%60).padStart(2,'0')}`;
+        if (timeW <= 0) endMatch(false, 'Koniec czasu!');
+        if (timeB <= 0) endMatch(true, 'Czas przeciwnika minął!');
+    }, 1000);
+}
+
+function undoChessMove() {
+    if (crowns > 2) return alert('Brak uprawnień do cofania przy 3 Koronkach!');
+    chess.undo(); chess.undo();
+    renderChessBoard();
+    botTalk("Cofnięto ruch. Przeanalizuj pozycję ponownie.");
+}
+
+function giveHint() {
+    if (hints <= 0) return alert('Brak dostępnych podpowiedzi!');
+    const m = chess.moves();
+    if (m.length > 0) {
+        hints--;
+        document.getElementById('btn-hint').innerText = `💡 Podpowiedź (${hints})`;
+        botTalk(`💡 Podpowiedź trenera: Rozważ posunięcie ${m[0]}!`);
+    }
+}
+
+function offerChessDraw() {
+    if (Math.random() > 0.5) endMatch(null, 'Remis za zgodą');
+    else botTalk("Przeciwnik odrzuca propozycję remisu. Gramy dalej!");
+}
+
+function resignChess() { endMatch(false, 'Poddanie partii'); }
+function flipBoard() { boardFlipped = !boardFlipped; renderChessBoard(); }
+
+let arrowStart = null;
+function handleRightClick(e, c, r) {
+    e.preventDefault();
+    if (!arrowStart) arrowStart = { c, r };
+    else {
+        const ctx = document.getElementById('arrow-canvas').getContext('2d');
+        ctx.strokeStyle = 'rgba(212, 175, 55, 0.85)';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(arrowStart.c * 60 + 30, arrowStart.r * 60 + 30);
+        ctx.lineTo(c * 60 + 30, r * 60 + 30);
+        ctx.stroke();
+        arrowStart = null;
+    }
+}
+
+function botTalk(txt) {
+    const log = document.getElementById('chess-chat');
+    const div = document.createElement('div');
+    div.className = 'msg bot';
+    div.innerText = txt;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+}
+
+function sendChessChat() {
+    const inp = document.getElementById('chat-txt');
+    if (!inp.value.trim()) return;
+    const log = document.getElementById('chess-chat');
+    const div = document.createElement('div');
+    div.className = 'msg user';
+    div.innerText = inp.value;
+    log.appendChild(div);
+    inp.value = '';
+    log.scrollTop = log.scrollHeight;
+    setTimeout(() => botTalk("Skup się na partii. Każdy ruch na szachownicy ma znaczenie."), 700);
+}
+
+function getGreeting(opp) {
+    if (opp === 'coach-magnus') return "Magnus Carlsen: Zaczynamy. Pamiętaj o kontroli centrum i harmonijnym rozwoju figur.";
+    if (opp === 'coach-hikaru') return "Hikaru Nakamura: Let's go! Gramy aktywnie i bez kompleksów.";
+    if (opp === 'coach-fischer') return "Bobby Fischer: Szachy to wymagająca dyscyplina. Pokaż mi swoją najlepszą grę.";
+    if (opp === 'bot-3000') return "Archidemon: Twój mat został już obliczony...";
+    return "Bot: Witaj w krypcie. Niech wygra lepszy strateg!";
+}
+
+function getComment() {
+    if (oppType.startsWith('coach-')) return "Trener: Zwróć uwagę na bezpieczeństwo króla i aktywne ustawienie gońców.";
+    return "Bot: Interesujący manewr... Moja obrona jest jednak gotowa.";
+}
+
+syncThemeAndProfile();
+</script>
+<script src="optimizer.js"></script>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krypta Szachów — Moduł 3: Skarbiec, Zadania & Ustawienia</title>
+    <style>
+        :root {
+            --bg-main: #0c0a0f;
+            --bg-card: #16131c;
+            --bg-header: #110e15;
+            --text-main: #b5afc0;
+            --text-bright: #f5f2fa;
+            --accent: #d4af37;
+            --accent-hover: #e6c54d;
+            --gold: #ffd700;
+            --border: #2a2433;
+        }
+        [data-theme="light"] {
+            --bg-main: #f3f4f6;
+            --bg-card: #ffffff;
+            --bg-header: #e5e7eb;
+            --text-main: #4b5563;
+            --text-bright: #111827;
+            --accent: #d97706;
+            --accent-hover: #b45309;
+            --gold: #b45309;
+            --border: #d1d5db;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: var(--bg-main); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; transition: 0.3s; }
+        
+        header { background: var(--bg-header); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .brand { font-size: 1.2rem; font-weight: 800; color: var(--text-bright); display: flex; gap: 8px; align-items: center; }
+        .brand span { color: var(--gold); }
+        .badge { background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold); color: var(--gold); padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; }
+
+        main { flex-grow: 1; max-width: 1280px; width: 100%; margin: 0 auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 24px; }
+
+        .tabs { display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+        .tab-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border); padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 0.9rem; }
+        .tab-btn.active, .tab-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+        .section-content { display: none; flex-direction: column; gap: 20px; }
+        .section-content.active { display: flex; }
+
+        .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; }
+        .card h3 { color: var(--text-bright); font-size: 1.1rem; }
+        .card p { font-size: 0.88rem; line-height: 1.4; }
+
+        .btn { background: var(--accent); color: #fff; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; transition: 0.2s; text-align: center; text-decoration: none; font-size: 0.9rem; }
+        .btn:hover { background: var(--accent-hover); }
+        .btn-sec { background: var(--bg-header); color: var(--text-bright); border: 1px solid var(--border); }
+        .btn-sec:hover { border-color: var(--text-main); }
+
+        input, select { width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-bright); border-radius: 6px; margin-top: 4px; }
+        .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+        .setting-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; display: flex; justify-content: space-between; align-items: center; }
+
+        /* Koło Fortuny */
+        .wheel-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; text-align: center; }
+        .wheel { width: 220px; height: 220px; border-radius: 50%; border: 6px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--text-bright); background: radial-gradient(circle, #2a2433 0%, #110e15 100%); transition: transform 3s cubic-bezier(0.15, 0.9, 0.2, 1); }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">🏰 KRYPTA <span>SKARBIEC, ZADANIA & PROFIL</span></div>
+    <div style="display:flex; align-items:center; gap:14px;">
+        <span class="badge">🪙 <span id="shards-count">250</span> Odłamków</span>
+        <a href="index.html" class="btn btn-sec" style="padding: 6px 14px; font-size:0.82rem;">← Powrót do Huba</a>
+    </div>
+</header>
+
+<main>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab(0)">🎁 Skarbiec Skinów</button>
+        <button class="tab-btn" onclick="switchTab(1)">📜 Zadania & Wyzwania</button>
+        <button class="tab-btn" onclick="switchTab(2)">🎡 Koło Fortuny</button>
+        <button class="tab-btn" onclick="switchTab(3)">⚔️ Akademia & Openings</button>
+        <button class="tab-btn" onclick="switchTab(4)">⚙️ Ustawienia (15 opcji)</button>
+    </div>
+
+    <!-- SEKCJA 0: SKARBIEC -->
+    <div class="section-content active" id="sec-0">
+        <h2>Skarbiec Figur & Motywów Szachowych</h2>
+        <p>Wydawaj zdobyte Odłamki Cienia na unikalne zestawy figurek i podświetlenia planszy.</p>
+        <div class="grid-cards">
+            <div class="card">
+                <h3>🔴 Zestaw: Krwawy Rubin</h3>
+                <p>Mroczne, rubinowe figury o wysokim połysku i złote akcenty.</p>
+                <button class="btn" onclick="buySkin('Krwawy Rubin', 100)">Kup (100 Odłamków)</button>
+            </div>
+            <div class="card">
+                <h3>⚡ Zestaw: Widmowy Neon</h3>
+                <p>Cybernetyczny zestaw z cyfrową poświatą i nowoczesnym designem.</p>
+                <button class="btn" onclick="buySkin('Widmowy Neon', 150)">Kup (150 Odłamków)</button>
+            </div>
+            <div class="card">
+                <h3>👑 Zestaw: Złoto Faraona</h3>
+                <p>Ciężkie, królewskie złote figury wykute w skarbcu Krypt.</p>
+                <button class="btn" onclick="buySkin('Złoto Faraona', 300)">Kup (300 Odłamków)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEKCJA 1: ZADANIA -->
+    <div class="section-content" id="sec-1">
+        <h2>Codzienne i Tygodniowe Wyzwania</h2>
+        <div class="grid-cards">
+            <div class="card">
+                <h3>Zadanie Dnia</h3>
+                <p>Wygraj 3 partie z botem o ELO powyżej 1000.<br><strong>Nagroda: +50 Odłamków</strong></p>
+                <button class="btn btn-sec" onclick="claimReward(50)">Odbierz Nagrodę</button>
+            </div>
+            <div class="card">
+                <h3>Wyzwanie Tygodnia</h3>
+                <p>Rozegraj 10 partii w Polskie Warcaby.<br><strong>Nagroda: +120 Odłamków</strong></p>
+                <button class="btn btn-sec" onclick="claimReward(120)">Odbierz Nagrodę</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEKCJA 2: KOŁO FORTUNY -->
+    <div class="section-content" id="sec-2">
+        <div class="wheel-wrap">
+            <h2>Koło Fortuny Cienia</h2>
+            <p>Zakręć kołem raz dziennie i wygraj darmowe Odłamki Cienia lub bonusy ELO!</p>
+            <div class="wheel" id="wheel-box">KLIKNIJ!</div>
+            <button class="btn" onclick="spinWheel()">Zakręć Kołem (Darmowe)</button>
+        </div>
+    </div>
+
+    <!-- SEKCJA 3: AKADEMIA -->
+    <div class="section-content" id="sec-3">
+        <h2>Akademia Debiutów Szachowych</h2>
+        <div class="grid-cards">
+            <div class="card">
+                <h3>Obrona Sycylijska (1. e4 c5)</h3>
+                <p>Najpopularniejsza i najbardziej agresywna odpowiedź na 1. e4 dla graczy szukających zwycięstwa.</p>
+            </div>
+            <div class="card">
+                <h3>Gambit Królowej (1. d4 d5 2. c4)</h3>
+                <p>Klasyczny debiut strategiczny oparty na kontrolowaniu centrum szachownicy.</p>
+            </div>
+            <div class="card">
+                <h3>Partia Włoska (1. e4 e5 2. Nf3 Nc6 3. Bc4)</h3>
+                <p>Harmonijny rozwój i szybki atak na słaby punkt f7 czarnych.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEKCJA 4: USTAWIENIA (15 OPCJI) -->
+    <div class="section-content" id="sec-4">
+        <h2>Panel Ustawień Systemowych</h2>
+        <div class="settings-grid">
+            <div class="setting-item"><span>Profil Nickname</span><input type="text" id="set-nick" value="Szymon" onchange="saveSettings()"></div>
+            <div class="setting-item"><span>Tryb Jasny / Ciemny</span><button class="btn btn-sec" onclick="toggleTheme()">Przełącz</button></div>
+            <div class="setting-item"><span>Dźwięki Ruchów</span><select id="set-sound" onchange="saveSettings()"><option>Włączone</option><option>Wyłączone</option></select></div>
+            <div class="setting-item"><span>Auto-Promocja Hetman</span><select id="set-promo" onchange="saveSettings()"><option>Zawsze Hetman</option><option>Wybierz w okienku</option></select></div>
+            <div class="setting-item"><span>Podświetlenie Ruchów</span><select id="set-highlight" onchange="saveSettings()"><option>Tak</option><option>Nie</option></select></div>
+            <div class="setting-item"><span>Pasek Ewaluacji</span><select id="set-eval" onchange="saveSettings()"><option>Widoczny</option><option>Ukryty</option></select></div>
+            <div class="setting-item"><span>Zegar szachowy (Widok)</span><select id="set-clock" onchange="saveSettings()"><option>MM:SS</option><option>Sekundy z dziesiętnymi</option></select></div>
+            <div class="setting-item"><span>Potwierdzenie Poddania</span><select id="set-conf-res" onchange="saveSettings()"><option>Włączone</option><option>Wyłączone</option></select></div>
+            <div class="setting-item"><span>Motyw Kolorystyczny</span><select id="set-color" onchange="saveSettings()"><option>Krwawy Czerwony</option><option>Szmaragdowy ZIelony</option><option>Królewskie Złoto</option></select></div>
+            <div class="setting-item"><span>Styl Figur</span><select id="set-pieces-style" onchange="saveSettings()"><option>Standard Unicode</option><option>Styl 3D Shadow</option></select></div>
+            <div class="setting-item"><span>Animacje Ruchu</span><select id="set-anim" onchange="saveSettings()"><option>Płynne</option><option>Brak</option></select></div>
+            <div class="setting-item"><span>Język Interfejsu</span><select id="set-lang" onchange="saveSettings()"><option>Polski</option><option>English</option></select></div>
+            <div class="setting-item"><span>Chat w grze</span><select id="set-chat" onchange="saveSettings()"><option>Włączony</option><option>Tylko Boty</option></select></div>
+            <div class="setting-item"><span>Drgania / Wibracje (Mobilne)</span><select id="set-vib" onchange="saveSettings()"><option>Włączone</option><option>Wyłączone</option></select></div>
+            <div class="setting-item"><span>Zapis stanu w chmurze</span><button class="btn btn-sec" onclick="alert('Zsynchronizowano z localStorage!')">Synchronizuj</button></div>
+        </div>
+    </div>
+</main>
+
+<script>
+let state = { nick: "Szymon", shards: 250, elo: { chessPvp: 1200, chessBot: 1200, checkersPvp: 1200, checkersBot: 1200 }, settings: {} };
+
+function loadState() {
+    try {
+        const raw = localStorage.getItem('cryptic_chess_v3');
+        if (raw) {
+            state = JSON.parse(raw);
+            document.getElementById('shards-count').innerText = state.shards;
+            document.getElementById('set-nick').value = state.nick || "Szymon";
+            if (state.settings && state.settings.lightTheme) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        } else {
+            saveState();
+        }
+    } catch(e) {}
+}
+
+function saveState() {
+    try {
+        state.nick = document.getElementById('set-nick').value;
+        localStorage.setItem('cryptic_chess_v3', JSON.stringify(state));
+    } catch(e) {}
+}
+
+function saveSettings() {
+    saveState();
+}
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', next);
+    state.settings = state.settings || {};
+    state.settings.lightTheme = (next === 'light');
+    saveState();
+}
+
+function switchTab(idx) {
+    document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+    document.querySelectorAll('.section-content').forEach((s, i) => s.classList.toggle('active', i === idx));
+}
+
+function buySkin(name, cost) {
+    if (state.shards >= cost) {
+        state.shards -= cost;
+        document.getElementById('shards-count').innerText = state.shards;
+        saveState();
+        alert(`Pomyślnie zakupiono zestaw: ${name}!`);
+    } else {
+        alert('Za mało Odłamków Cienia! Rozgrywaj partie, aby zdobyć więcej.');
+    }
+}
+
+function claimReward(amount) {
+    state.shards += amount;
+    document.getElementById('shards-count').innerText = state.shards;
+    saveState();
+    alert(`Odebrano nagrodę: +${amount} Odłamków Cienia!`);
+}
+
+function spinWheel() {
+    const prizes = [20, 50, 100, 200, 'Brak', 500];
+    const prize = prizes[Math.floor(Math.random() * prizes.length)];
+    const wb = document.getElementById('wheel-box');
+    wb.style.transform = `rotate(${Math.floor(Math.random() * 1000 + 1000)}deg)`;
+    setTimeout(() => {
+        if (typeof prize === 'number') {
+            state.shards += prize;
+            document.getElementById('shards-count').innerText = state.shards;
+            saveState();
+            alert(`Koło wylosowało nagrodę: +${prize} Odłamków!`);
+        } else {
+            alert('Niestety, tym razem nic nie wylosowano. Spróbuj jutro!');
+        }
+    }, 3000);
+}
+
+loadState();
+</script>
+<script src="optimizer.js"></script>
+</body>
+</html>
