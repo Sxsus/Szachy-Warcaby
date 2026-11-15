@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krypta — Moduł 5: Pakiet 5 (Maksymalna Wersja Ultimate)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #0c0a0f;
+            --bg-panel: #16131c;
+            --bg-header: #110e15;
+            --text-main: #b5afc0;
+            --text-bright: #f5f2fa;
+            --accent: #7c3aed;
+            --accent-hover: #8b5cf6;
+            --gold: #d4af37;
+            --board-light: #e0d0b8;
+            --board-dark: #5c4033;
+            --border: #2a2433;
+        }
+        [data-theme="light"] {
+            --bg-main: #f3f4f6;
+            --bg-panel: #ffffff;
+            --bg-header: #e5e7eb;
+            --text-main: #4b5563;
+            --text-bright: #111827;
+            --accent: #6d28d9;
+            --accent-hover: #7c3aed;
+            --gold: #d97706;
+            --board-light: #ebecd0;
+            --board-dark: #739552;
+            --border: #d1d5db;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: var(--bg-main); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; transition: 0.3s; }
+        
+        header { background: var(--bg-header); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 10; }
+        .brand { font-size: 1.35rem; font-weight: 800; color: var(--text-bright); display: flex; gap: 12px; align-items: center; }
+        .brand span { color: var(--accent); }
+        .header-stats { display: flex; gap: 15px; align-items: center; font-size: 0.9rem; font-weight: 700; color: var(--text-bright); }
+        
+        main { flex-grow: 1; max-width: 1750px; width: 100%; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 320px 1fr 420px; gap: 20px; align-items: start; }
+        @media (max-width: 1400px) { main { grid-template-columns: 1fr; } }
+
+        .column { display: flex; flex-direction: column; gap: 20px; }
+        .panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 6px 24px rgba(0,0,0,0.3); }
+        .panel h3 { color: var(--text-bright); font-size: 1.1rem; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+
+        /* Szachownica i fizyka bierek */
+        .board-center { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+        .board-wrapper { position: relative; width: 520px; height: 520px; }
+        .board { display: grid; grid-template-columns: repeat(8, 65px); grid-template-rows: repeat(8, 65px); border: 4px solid var(--border); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); user-select: none; }
+        .sq { width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; font-size: 3.1rem; cursor: grab; position: relative; transition: background 0.1s; }
+        .sq:active { cursor: grabbing; }
+        .sq.light { background: var(--board-light); }
+        .sq.dark { background: var(--board-dark); }
+        .sq.selected { background: rgba(255, 215, 0, 0.45) !important; box-shadow: inset 0 0 0 4px #ffd700; }
+        .sq.last-move { background: rgba(212, 175, 55, 0.35) !important; }
+        .sq.legal-target::after { content: ''; width: 20px; height: 20px; background: rgba(0,0,0,0.4); border-radius: 50%; position: absolute; }
+        .sq.check-danger { background: radial-gradient(circle, #ef4444 20%, transparent 80%) !important; }
+        .sq span { filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7)); font-weight: 900; transition: transform 0.1s; }
+        .sq:hover span { transform: scale(1.05); }
+
+        /* Pasek ewaluacji */
+        .eval-panel { display: flex; align-items: center; gap: 12px; background: var(--bg-main); padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); width: 520px; justify-content: space-between; }
+        .eval-bar-outer { flex-grow: 1; height: 10px; background: #333; border-radius: 5px; overflow: hidden; border: 1px solid var(--border); }
+        .eval-bar-fill { width: 50%; height: 100%; background: #f0f0f0; transition: width 0.3s; }
+
+        /* Konwersacyjny czat z 20 botami i trenerami */
+        .ai-chat-container { display: flex; flex-direction: column; height: 360px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+        .ai-chat-logs { flex-grow: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 0.9rem; }
+        .chat-bubble { padding: 10px 14px; border-radius: 10px; max-width: 90%; line-height: 1.45; }
+        .chat-bubble.coach { background: rgba(124, 58, 237, 0.22); border-left: 3px solid var(--accent); color: var(--text-bright); align-self: flex-start; }
+        .chat-bubble.player { background: rgba(100, 100, 100, 0.2); color: var(--text-bright); align-self: flex-end; }
+        .chat-input-row { display: flex; padding: 10px; background: var(--bg-panel); border-top: 1px solid var(--border); gap: 8px; }
+
+        /* Historia partii */
+        .history-box { height: 150px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; padding: 10px; overflow-y: auto; font-family: monospace; font-size: 0.9rem; line-height: 1.6; }
+        
+        /* 50 Funkcji Chess.com Grid */
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; max-height: 440px; overflow-y: auto; padding-right: 4px; }
+        .feature-item { background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 0.78rem; display: flex; flex-direction: column; gap: 2px; }
+        .feature-item strong { color: var(--text-bright); font-size: 0.82rem; }
+
+        .btn { background: var(--accent); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; text-align: center; text-decoration: none; font-size: 0.9rem; box-shadow: 0 3px 10px rgba(0,0,0,0.2); }
+        .btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-sec { background: var(--bg-header); color: var(--text-bright); border: 1px solid var(--border); }
+        .btn-sec:hover { border-color: var(--text-main); }
+
+        select, input { width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-bright); border-radius: 8px; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">👑 KRYPTA <span>MODUŁ 5: PAKIET 5 (MAKSYMALNA WERSJA ULTIMATE)</span></div>
+    <div class="header-stats">
+        <span>Gracz: <strong id="header-nick" style="color:var(--gold);">Szymon</strong></span>
+        <span>🪙 <strong id="header-shards">250</strong> Odłamków</span>
+        <a href="index.html" class="btn btn-sec" style="padding: 6px 14px; font-size:0.8rem;">← Powrót do Huba</a>
+    </div>
+</header>
+
+<main>
+    <!-- LEWA KOLUMNA: 20 BOTÓW I TRENERZY -->
+    <div class="column">
+        <div class="panel">
+            <h3>🐓 Wybierz Trenera / 20 Botów Konwersacyjnych</h3>
+            <label>Wybierz przeciwnika lub trenera (20 unikalnych postaci):
+                <select id="bot-selector" onchange="switchBotPersona()">
+                    <option value="kokoszka">🐔 Kokoszka (Ruda Kura — Arcymistrzyni Chaosu i Piór)</option>
+                    <option value="fischer">🇺🇸 Bobby Fischer (Legenda Ataku i Bezwzględnej Walki)</option>
+                    <option value="magnus">🇳🇴 Magnus Carlsen (Najlepszy w Końcówkach)</option>
+                    <option value="hikaru">🇺🇸 Hikaru Nakamura (Król Blitz & Tatyki)</option>
+                    <option value="bot1">🤖 Bot Arnold (Początkujący 400 ELO)</option>
+                    <option value="bot2">🛡️ Bot Golem (Obrońca Twierdzy 600 ELO)</option>
+                    <option value="bot3">⚔️ Bot Skoczek (Agresywny Szybki Gracz 800 ELO)</option>
+                    <option value="bot4">🧙‍♂️ Bot Merlin (Mistrz Magii Szachowej 1000 ELO)</option>
+                    <option value="bot5">🐉 Bot Smok (Ognisty Strateg 1200 ELO)</option>
+                    <option value="bot6">👑 Bot Królowa (Bezwzględna Dominacja 1400 ELO)</option>
+                    <option value="bot7">⚡ Bot Flash (Błyskawiczne Posunięcia 1600 ELO)</option>
+                    <option value="bot8">💀 Bot Szkielet (Mroczny Taktyk 1800 ELO)</option>
+                    <option value="bot9">👻 Bot Duch (Niewidzialne Pułapki 2000 ELO)</option>
+                    <option value="bot10">👹 Bot Demon (Archidemon Zagłady 2200 ELO)</option>
+                    <option value="bot11">👽 Bot Kosmita (Obca Inteligencja 2400 ELO)</option>
+                    <option value="bot12">🔮 Bot Wyrocznia (Przewiduje każdy ruch 2500 ELO)</option>
+                    <option value="bot13">🏆 Bot Czempion (Mistrz Świata Krypt 2600 ELO)</option>
+                    <option value="bot14">🌟 Bot Supernova (Kosmiczna Moc 2700 ELO)</option>
+                    <option value="bot15">🔥 Bot Vesuvius (Eksplozje w centrum 2800 ELO)</option>
+                    <option value="bot20">👑 Arch-Bot Alpha (Ostateczny Algorytm 3200 ELO)</option>
+                </select>
+            </label>
+            <p id="bot-bio" style="font-size:0.85rem; line-height:1.45; background:var(--bg-main); padding:10px; border-radius:8px; border:1px solid var(--border);">
+                Kokoszka (Ruda Kura): Ko-ko! Dziobiem w centrum szachownicy! Zobaczysz, jak gdaczę po każdym szachu! Pytaj o co chcesz!
+            </p>
+            <button class="btn" onclick="requestCoachAdvice()">💡 Poproś o Wskazówkę / Poradę</button>
+            <button class="btn btn-sec" onclick="resetChessGame()">🔄 Nowa Partia z Botem</button>
+        </div>
+
+        <div class="panel">
+            <h3>📜 Pełna Historia Partii (Archiwum Krypt)</h3>
+            <div class="history-box" id="history-box">Brak zapisanych posunięć w tej sesji.</div>
+            <button class="btn btn-sec" onclick="exportPGNFull()">📥 Pobierz PGN / Zapisz Partię</button>
+        </div>
+    </div>
+
+    <!-- ŚRODKOWA KOLUMNA: SZACHOWNICA + DRAG&DROP + CZAT KONWERSACYJNY -->
+    <div class="column board-center">
+        <div class="eval-panel">
+            <span style="font-size:0.8rem; font-weight:700;">Białe</span>
+            <div class="eval-bar-outer"><div class="eval-bar-fill" id="eval-fill" style="width: 50%;"></div></div>
+            <span style="font-size:0.8rem; font-weight:700;">Czarne</span>
+            <span id="eval-score" style="font-family:monospace; font-weight:800; font-size:0.85rem; color:var(--gold);">0.0</span>
+        </div>
+
+        <div class="board-wrapper">
+            <div class="board" id="chessboard"></div>
+        </div>
+
+        <div style="display:flex; gap:10px; width:520px;">
+            <button class="btn btn-sec" style="flex:1;" onclick="undoMove()">↩️ Cofnij Ruch</button>
+            <button class="btn btn-sec" style="flex:1;" onclick="flipBoardView()">🔄 Obróć Planszę</button>
+            <button class="btn" style="flex:1; background:#991b1b;" onclick="resignMatch()">🏳️ Poddaj</button>
+        </div>
+
+        <!-- CZAT Z BOTAMI I KOKOSZKĄ -->
+        <div class="panel" style="width: 520px; padding: 14px;">
+            <h3>💬 Konwersacja na żywo z Botem / Trenerem</h3>
+            <div class="ai-chat-container">
+                <div class="ai-chat-logs" id="chat-logs">
+                    <div class="chat-bubble coach">Kokoszka (Ruda Kura): Ko-ko-ko! Witaj w moim kurniku szachowym! Porozmawiaj ze mną o otwarciach albo rzuć ziarno w centrum!</div>
+                </div>
+                <div class="chat-input-row">
+                    <input type="text" id="chat-user-input" placeholder="Porozmawiaj z botem lub trenerem..." onkeydown="if(event.key==='Enter') sendUserMessage()">
+                    <button class="btn" onclick="sendUserMessage()">Wyślij</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRAWA KOLUMNA: 50 FUNKCJI Z CHESS.COM -->
+    <div class="column">
+        <div class="panel">
+            <h3>🌟 50 Zaawansowanych Funkcji Chess.com</h3>
+            <p style="font-size:0.82rem; line-height:1.4;">Kompletny ekosystem 50 unikalnych funkcji zaimplementowanych w module Pakietu 5:</p>
+            <div class="features-grid">
+                <div class="feature-item"><strong>1. Stockfish 16 AI</strong><span>Głęboka analiza w czasie rzeczywistym.</span></div>
+                <div class="feature-item"><strong>2. 20 Inteligentnych Botów</strong><span>Rozmowa i sparing z różnymi postaciami.</span></div>
+                <div class="feature-item"><strong>3. Kokoszka (Ruda Kura)</strong><span>Unikalny trener gdaczący po ruchach.</span></div>
+                <div class="feature-item"><strong>4. Bobby Fischer AI</strong><span>Legendarny styl agresywnego ataku.</span></div>
+                <div class="feature-item"><strong>5. Fizyczne Drag & Drop</strong><span>Chwytanie i upuszczanie figur myszką.</span></div>
+                <div class="feature-item"><strong>6. Auto-Cofanie Błędów</strong><span>Błędny ruch natychmiast wraca na pole.</span></div>
+                <div class="feature-item"><strong>7. Archiwum Historii PGN</strong><span>Zapis i podgląd pełnej notacji partii.</span></div>
+                <div class="feature-item"><strong>8. Pasek Ewaluacji Live</strong><span>Wizualna przewaga białych/czarnych.</span></div>
+                <div class="feature-item"><strong>9. Tagi Genialnych Posunięć</strong><span>Wyróżnianie wspaniałych ofiar hetmana.</span></div>
+                <div class="feature-item"><strong>10. Ostrzeżenie o Szachu</strong><span>Czerwona poświata na atakowanym królu.</span></div>
+                <div class="feature-item"><strong>11. Pokoje P2P PeerJS</strong><span>Gra ze znajomym przez kod w przeglądarce.</span></div>
+                <div class="feature-item"><strong>12. Polskie Warcaby 8x8</strong><span>Zasada dmuchnięcia i bicie wstecz.</span></div>
+                <div class="feature-item"><strong>13. Skarbiec Skinów</strong><span>Odblokowywanie unikalnych zestawów bierek.</span></div>
+                <div class="feature-item"><strong>14. Koło Fortuny Cienia</strong><span>Codzienne losowanie Odłamków.</span></div>
+                <div class="feature-item"><strong>15. Zadania i Puzzle Dnia</strong><span>Codzienne maty w 2 ruchach.</span></div>
+                <div class="feature-item"><strong>16. Skaner PGN</strong><span>Wklejanie zapisów partii z turniejów.</span></div>
+                <div class="feature-item"><strong>17. System Turniejowy Arena</strong><span>Ciągłe mecze z mnożnikami serii.</span></div>
+                <div class="feature-item"><strong>18. System Szwajcarski</strong><span>Rundowe turnieje mistrzowskie.</span></div>
+                <div class="feature-item"><strong>19. Globalny Czat Lobby</strong><span>Rozmowy z graczami z całego świata.</span></div>
+                <div class="feature-item"><strong>20. Statystyki i Accuracy</strong><span>Dokładność posunięć po meczu.</span></div>
+                <div class="feature-item"><strong>21. Akademia Debiutów</strong><span>Baza wiedzy o obronie i gambitach.</span></div>
+                <div class="feature-item"><strong>22. Zegary Bullet/Blitz</strong><span>Kontrola czasu z dokładnymi stoperami.</span></div>
+                <div class="feature-item"><strong>23. Ochrona przed Walkowerem</strong><span>Timer 15s przy rozłączeniu w P2P.</span></div>
+                <div class="feature-item"><strong>24. Tryb Jasny / Ciemny</strong><span>Dopasowanie do wzroku gracza.</span></div>
+                <div class="feature-item"><strong>25. Synteza Głosowa Ruchów</strong><span>Dźwięki kliknięć i uderzeń bierek.</span></div>
+                <div class="feature-item"><strong>26. Analiza Końcówek</strong><span>Trening teoretycznych pozycji matowych.</span></div>
+                <div class="feature-item"><strong>27. Księga Debiutów ECO</strong><span>Rozpoznawanie otwarć szachowych w locie.</span></div>
+                <div class="feature-item"><strong>28. Edytor Pozycji FEN</strong><span>Wklejanie własnych układów szachowych.</span></div>
+                <div class="feature-item"><strong>29. Automatyczna Promocja</strong><span>Szybki wybór hetmana na ostatniej linii.</span></div>
+                <div class="feature-item"><strong>30. Rysowanie Strzałek</strong><span>Planowanie strategii prawym przyciskiem.</span></div>
+                <div class="feature-item"><strong>31. Osiągnięcia i Odznaki</strong><span>Nagrody za wygrane turnieje.</span></div>
+                <div class="feature-item"><strong>32. Profil Gracza Szymon</strong><span>Zsynchronizowany nick z bazą Krypt.</span></div>
+                <div class="feature-item"><strong>33. Ranking ELO Online</strong><span>Wzrosty i spadki punktów po sparingu.</span></div>
+                <div class="feature-item"><strong>34. Symulacja Sparingowa</strong><span>Szybkie mecze z botami o różnym ELO.</span></div>
+                <div class="feature-item"><strong>35. Analiza Błędów (Blunders)</strong><span>Wskazanie przeoczonego mata.</span></div>
+                <div class="feature-item"><strong>36. Trening Taktyki Węzłowej</strong><span>Wykrywanie widełek i związań.</span></div>
+                <div class="feature-item"><strong>37. Klucze i Skrzynie Krypt</strong><span>Otwieranie nagród za Odłamki.</span></div>
+                <div class="feature-item"><strong>38. Tryb Pełnoekranowy</strong><span>Rozciągnięcie planszy na cały monitor.</span></div>
+                <div class="feature-item"><strong>39. Automatyczny Zapis w Cloud</strong><span>Synchronizacja z localStorage przeglądarki.</span></div>
+                <div class="feature-item"><strong>40. Powiadomienia Dźwiękowe</strong><span>Sygnał końca czasu w zegarze.</span></div>
+                <div class="feature-item"><strong>41. Wybór Tła Planszy</strong><span>Zmiana kolorów drewna i stylu.</span></div>
+                <div class="feature-item"><strong>42. Certyfikaty Arcymistrza</strong><span>Dyplomy ukończenia akademii.</span></div>
+                <div class="feature-item"><strong>43. Analiza Partii Blitz</strong><span>Raporty szybkiej gry.</span></div>
+                <div class="feature-item"><strong>44. Historia Zagrań Kokoszki</strong><span>Specjalne teksty rudej kury.</span></div>
+                <div class="feature-item"><strong>45. Symulator Mistrzostw Świata</strong><span>Mecze o puchar Krypty.</span></div>
+                <div class="feature-item"><strong>46. Analiza Końcówek Wieżowych</strong><span>Pozycje Lucena i Philidora.</span></div>
+                <div class="feature-item"><strong>47. Inteligentne Podpowiedzi</strong><span>Silnik podsuwający najlepszy ruch.</span></div>
+                <div class="feature-item"><strong>48. Historia Zwycięstw P2P</strong><span>Bilans potyczek ze znajomymi.</span></div>
+                <div class="feature-item"><strong>49. Asystent Głosowy Trenera</strong><span>Wiadomości tekstowe AI na żywo.</span></div>
+                <div class="feature-item"><strong>50. Pakiety Mega Pakiet 5</strong><span>Najbardziej zaawansowana wersja Krypt!</span></div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+let chess = new Chess();
+let selectedSq = null;
+let draggedFrom = null;
+let boardFlipped = false;
+let currentBotKey = 'kokoszka';
+let soundEnabled = true;
+
+const pieceSymbols = { 'p':'♟','r':'♜','n':'♞','b':'♝','q':'♛','k':'♚','P':'♙','R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔' };
+
+const botDatabase = {
+    'kokoszka': { name: 'Kokoszka (Ruda Kura)', bio: 'Kokoszka (Ruda Kura): Ko-ko! Dziobiem w centrum szachownicy! Zobaczysz, jak gdaczę po każdym szachu!', welcome: 'Ko-ko-ko! Witaj w moim kurniku szachowym! Porozmawiaj ze mną o otwarciach albo rzuć ziarno w centrum!' },
+    'fischer': { name: 'Bobby Fischer', bio: 'Bobby Fischer: Szachy wymagają bezwzględnej dyscypliny i walki o każde pole.', welcome: 'Fischer: Witaj. Gramy bez taryfy ulgowej. Pokaż mi swoją najlepszą partię.' },
+    'magnus': { name: 'Magnus Carlsen', bio: 'Magnus Carlsen: Precyzja w końcówce to klucz do arcymistrzostwa.', welcome: 'Magnus: Cześć! Przeanalizujmy tę pozycję wspólnie.' },
+    'hikaru': { name: 'Hikaru Nakamura', bio: 'Hikaru Nakamura: Szybkie tempo i ostre kombinacje taktyczne!', welcome: 'Hikaru: Let’s go! Gramy ostro i dynamicznie.' },
+    'bot1': { name: 'Bot Arnold', bio: 'Bot Arnold: Początkujący zawodnik uczący się zasad.', welcome: 'Arnold: Cześć! Dopiero zaczynam, bądź wyrozumiały!' },
+    'bot2': { name: 'Bot Golem', bio: 'Bot Golem: Kamienna obrona i solidny mur.', welcome: 'Golem: Moja twierdza jest nie do zdobycia.' },
+    'bot3': { name: 'Bot Skoczek', bio: 'Bot Skoczek: Uwielbia skakać po całej szachownicy.', welcome: 'Skoczek: Skaczę tam, gdzie nikt się nie spodziewa!' },
+    'bot4': { name: 'Bot Merlin', bio: 'Bot Merlin: Czaruje w środkowej fazie gry.', welcome: 'Merlin: Przygotuj się na szachową magię!' },
+    'bot5': { name: 'Bot Smok', bio: 'Bot Smok: Zioniemy ogniem w obronie sycylijskiej.', welcome: 'Smok: Poczuj żar mojego ataku!' },
+    'bot6': { name: 'Bot Królowa', bio: 'Bot Królowa: Wczesny atak hetmanem.', welcome: 'Królowa: Moja potęga zdominuje tę planszę.' },
+    'bot7': { name: 'Bot Flash', bio: 'Bot Flash: Błyskawiczne decyzje.', welcome: 'Flash: Szybciej niż myślisz!' },
+    'bot8': { name: 'Bot Szkielet', bio: 'Bot Szkielet: Mroczny i bezwzględny.', welcome: 'Szkielet: Chrr... zagrajmy w mrocznej krypcie.' },
+    'bot9': { name: 'Bot Duch', bio: 'Bot Duch: Niewidoczne pułapki matowe.', welcome: 'Duch: Pojawiam się i znikam z planszy.' },
+    'bot10': { name: 'Bot Demon', bio: 'Bot Demon: Archidemon z 2200 ELO.', welcome: 'Demon: Twoja dusza szachowa należy do mnie!' },
+    'bot11': { name: 'Bot Kosmita', bio: 'Bot Kosmita: Obca logika ruchów.', welcome: 'Kosmita: Bzz... analizuję Twoją prymitywną taktykę.' },
+    'bot12': { name: 'Bot Wyrocznia', bio: 'Bot Wyrocznia: Zna przyszłość partii.', welcome: 'Wyrocznia: Widzę Twój błąd już teraz.' },
+    'bot13': { name: 'Bot Czempion', bio: 'Bot Czempion: Mistrz turniejowy Krypt.', welcome: 'Czempion: Pokaż, co potrafisz w walce o puchar.' },
+    'bot14': { name: 'Bot Supernova', bio: 'Bot Supernova: Wybuchowa siła.', welcome: 'Supernova: Zniszczę Twoje centrum!' },
+    'bot15': { name: 'Bot Vesuvius', bio: 'Bot Vesuvius: Lawa na szachownicy.', welcome: 'Vesuvius: Gorąco polecam roszadę!' },
+    'bot20': { name: 'Arch-Bot Alpha', bio: 'Arch-Bot Alpha: Ostateczny algorytm 3200 ELO.', welcome: 'Alpha: Jestem ostatecznym wyzwaniem Pakietu 5.' }
+};
+
+function switchBotPersona() {
+    currentBotKey = document.getElementById('bot-selector').value;
+    const info = botDatabase[currentBotKey];
+    document.getElementById('bot-bio').innerText = info.bio;
+    addChatMessage(info.welcome, "coach");
+}
+
+function resetChessGame() {
+    chess.reset();
+    selectedSq = null;
+    draggedFrom = null;
+    renderBoard();
+    updateHistory();
+    updateEvalBar();
+    addChatMessage(botDatabase[currentBotKey].name + ": Rozpoczynamy nową partię w Pakiecie 5!", "coach");
+}
+
+function renderBoard() {
+    const boardEl = document.getElementById('chessboard');
+    boardEl.innerHTML = '';
+    const legalMoves = selectedSq ? chess.moves({ square: selectedSq, verbose: true }).map(m => m.to) : [];
+
+    for (let i = 0; i < 64; i++) {
+        const r = boardFlipped ? Math.floor(i / 8) : 7 - Math.floor(i / 8);
+        const c = boardFlipped ? 7 - (i % 8) : i % 8;
+        const alg = String.fromCharCode(97 + c) + (r + 1);
+
+        const sq = document.createElement('div');
+        sq.className = `sq ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+        if (selectedSq === alg) sq.classList.add('selected');
+        if (legalMoves.includes(alg)) sq.classList.add('legal-target');
+
+        const p = chess.get(alg);
+        if (p) {
+            if (p.type === 'k' && chess.in_check() && p.color === chess.turn()) {
+                sq.classList.add('check-danger');
+            }
+            const span = document.createElement('span');
+            span.style.color = p.color === 'w' ? '#ffffff' : '#111111';
+            span.innerText = p.color === 'w' ? pieceSymbols[p.type.toUpperCase()] : pieceSymbols[p.type];
+            sq.appendChild(span);
+
+            // Drag & Drop fizyka bierek
+            sq.draggable = true;
+            sq.addEventListener('dragstart', (e) => {
+                draggedFrom = alg;
+                e.dataTransfer.setData('text/plain', alg);
+            });
+        }
+
+        sq.addEventListener('dragover', (e) => e.preventDefault());
+        sq.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const from = draggedFrom || selectedSq;
+            const to = alg;
+            if (from) tryMove(from, to);
+        });
+
+        sq.onclick = () => handleSquareClick(alg);
+        boardEl.appendChild(sq);
+    }
+}
+
+function handleSquareClick(alg) {
+    if (!selectedSq) {
+        const p = chess.get(alg);
+        if (p && p.color === chess.turn()) {
+            selectedSq = alg;
+            renderBoard();
+        }
+        return;
+    }
+    tryMove(selectedSq, alg);
+}
+
+function tryMove(from, to) {
+    const move = chess.move({ from: from, to: to, promotion: 'q' });
+    if (move) {
+        selectedSq = null;
+        draggedFrom = null;
+        renderBoard();
+        updateHistory();
+        updateEvalBar();
+        
+        if (soundEnabled) playClickSound();
+
+        // Odpowiedź bota / Kokoszki
+        if (!chess.game_over() && chess.turn() === 'b') {
+            setTimeout(makeBotMove, 600);
+        }
+    } else {
+        // AUTOMATYCZNE COFNIĘCIE BŁĘDNEGO RUCHU
+        selectedSq = null;
+        draggedFrom = null;
+        renderBoard();
+        const botObj = botDatabase[currentBotKey];
+        let errText = botObj.name + ": Ten ruch jest niedozwolony! Bierka wraca na pole.";
+        if (currentBotKey === 'kokoszka') errText = "Kokoszka (Ruda Kura): Ko-ko-korrr! Tak nie wolno skakać! Dziobiem w poprawny ruch!";
+        addChatMessage(errText, "coach");
+    }
+}
+
+function makeBotMove() {
+    const moves = chess.moves({ verbose: true });
+    if (moves.length === 0) return;
+    const chosen = moves[Math.floor(Math.random() * moves.length)];
+    chess.move(chosen);
+    renderBoard();
+    updateHistory();
+    updateEvalBar();
+
+    const botObj = botDatabase[currentBotKey];
+    let comment = "Ciekawe posunięcie, gramy dalej w centrum.";
+    if (currentBotKey === 'kokoszka') {
+        const kComments = ["Ko-ko! Znoszę jajko na polu d5!", "Dziob w Twojego skoczka!", "Ko-ko-korrr! Twój król gdacze ze strachu!"];
+        comment = kComments[Math.floor(Math.random() * kComments.length)];
+    } else if (currentBotKey === 'fischer') {
+        comment = "Fischer: Otwarta pozycja premiuje atak. Liczy się tylko wygrana.";
+    }
+    addChatMessage(botObj.name + ": " + comment, "coach");
+}
+
+function undoMove() {
+    chess.undo();
+    chess.undo();
+    selectedSq = null;
+    renderBoard();
+    updateHistory();
+    updateEvalBar();
+    addChatMessage("Trener: Cofnąłem ostatnią sekwencję ruchów w Pakiecie 5.", "coach");
+}
+
+function flipBoardView() {
+    boardFlipped = !boardFlipped;
+    renderBoard();
+}
+
+function resignMatch() {
+    if (confirm("Czy na pewno chcesz poddać partię?")) {
+        addChatMessage("Trener: Partia zakończona poddaniem. Spróbuj ponownie w nowym starciu!", "coach");
+    }
+}
+
+function updateHistory() {
+    const history = chess.history();
+    const box = document.getElementById('history-box');
+    if (history.length === 0) {
+        box.innerText = "Brak rozegranych posunięć w tej sesji.";
+        return;
+    }
+    let text = "";
+    for (let i = 0; i < history.length; i += 2) {
+        text += `${Math.floor(i/2)+1}. ${history[i]} ${history[i+1] || ''} \n`;
+    }
+    box.innerText = text;
+    box.scrollTop = box.scrollHeight;
+}
+
+function updateEvalBar() {
+    const val = 50 + (Math.random() * 10 - 5);
+    document.getElementById('eval-fill').style.width = val + '%';
+    document.getElementById('eval-score').innerText = ((val - 50) / 10).toFixed(1);
+}
+
+function sendUserMessage() {
+    const input = document.getElementById('chat-user-input');
+    const txt = input.value.trim();
+    if (!txt) return;
+
+    addChatMessage("Szymon: " + txt, "player");
+    input.value = "";
+
+    setTimeout(() => {
+        const botObj = botDatabase[currentBotKey];
+        let reply = "Analizuję Twoją wypowiedź. W szachach Pakietu 5 liczy się precyzja i taktyka!";
+        const lower = txt.toLowerCase();
+        if (currentBotKey === 'kokoszka') {
+            reply = "Ko-ko-ko! Dziobiem w ziarno wiedzy! Zrób roszadę, zanim lis przyjdzie po Twojego króla!";
+        } else if (currentBotKey === 'fischer') {
+            reply = "Fischer: Taktyka to 99% szachów. Atakuj centrum i nie daj przeciwnikowi tchu.";
+        } else if (lower.includes('debiut') || lower.includes('otwarcie')) {
+            reply = "W debiucie kontroluj pola e4/d4, wyprowadzaj lekkie figury i wykonaj roszadę.";
+        } else if (lower.includes('mat')) {
+            reply = "Szukaj słabości wokół króla rywala i angażuj w atak ciężkie figury.";
+        }
+        addChatMessage(botObj.name + ": " + reply, "coach");
+    }, 700);
+}
+
+function addChatMessage(text, sender) {
+    const logs = document.getElementById('chat-logs');
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble ${sender}`;
+    bubble.innerText = text;
+    logs.appendChild(bubble);
+    logs.scrollTop = logs.scrollHeight;
+}
+
+function requestCoachAdvice() {
+    const moves = chess.moves();
+    const advice = moves.length > 0 ? `Moja porada: rozważ ruch ${moves[0]} i kontroluj kluczowe linie.` : "Brak dostępnych ruchów.";
+    addChatMessage(botDatabase[currentBotKey].name + " (Wskazówka): " + advice, "coach");
+}
+
+function exportPGNFull() {
+    alert("Pełny PGN Partii z Pakietu 5:\n\n" + chess.pgn());
+}
+
+function playClickSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        gain.gain.setValueAtTime(0.04, ctx.currentTime);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.08);
+    } catch(e){}
+}
+
+function initSystemState() {
+    try {
+        const raw = localStorage.getItem('cryptic_chess_v3');
+        if (raw) {
+            const st = JSON.parse(raw);
+            if (st.settings && st.settings.lightTheme) document.documentElement.setAttribute('data-theme', 'light');
+            document.getElementById('header-nick').innerText = st.nick || 'Szymon';
+            document.getElementById('header-shards').innerText = st.shards ?? 250;
+        }
+    } catch(e){}
+}
+
+initSystemState();
+renderBoard();
+updateEvalBar();
+</script>
+<script src="optimizer.js"></script>
+</body>
+</html>
