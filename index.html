@@ -46,7 +46,7 @@
         .lobby-search:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(124,58,237,0.3); }
         .search-icon-pos { position: absolute; left: 14px; top: 14px; font-size: 1rem; opacity: 0.6; }
 
-        /* Siatka 3 kolumn: Szachy Desktop, Szachy Mobile, Warcaby & Sieć */
+        /* Siatka kafelków w lobby */
         .lobby-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: start; }
         @media (max-width: 1300px) { .lobby-grid { grid-template-columns: 1fr; } }
 
@@ -82,7 +82,7 @@
     <div class="welcome-banner">
         <div class="welcome-text">
             <h1>Witaj w Głównym Hubie Krypt, Szymon!</h1>
-            <p>Wybierz preferowaną wersję gry lub skorzystaj z wyszukiwarki, aby szybko odnaleźć odpowiedni moduł.</p>
+            <p>Wybierz preferowany moduł rozgrywki lub skorzystaj z wyszukiwarki, aby szybko odnaleźć odpowiednią wersję.</p>
         </div>
         <div class="search-container">
             <span class="search-icon-pos">🔍</span>
@@ -111,13 +111,13 @@
         <!-- 2. SZACHY MOBILNE (MODUŁ 8) -->
         <div class="game-panel" id="panel-chess-mob" data-keywords="szachy chess mobile mobilna telefon smartfon aplikacja 8">
             <h2>📱 Kryptowe Szachy (Mobile)</h2>
-            <p class="game-desc">Wersja zoptymalizowana pod ekrany dotykowe telefonów i tabletów. Wygodne przyciski sterowania, responsywna szachownica oraz szybkie akcje.</p>
+            <p class="game-desc">Wersja zoptymalizowana pod ekrany dotykowe telefonów i tabletów. Inteligentne wykrywanie urządzenia oraz mobilny asystent.</p>
             
             <div class="features-section">
                 <h4>Główne funkcje:</h4>
                 <div class="features-list">
                     <div class="feature-badge"><strong>Optymalizacja Touch</strong><span>Wygodne dotykowe sterowanie.</span></div>
-                    <div class="feature-badge"><strong>Skala Responsywna</strong><span>Dopasowanie do każdego ekranu.</span></div>
+                    <div class="feature-badge"><strong>Auto-Wykrywanie</strong><span>Wykrywanie PC vs Mobile.</span></div>
                     <div class="feature-badge"><strong>Mobilny Asystent</strong><span>Lekki silnik na telefon.</span></div>
                 </div>
             </div>
@@ -125,10 +125,44 @@
             <a href="szachy8.html" class="btn" style="background: #059669; margin-top: auto;">Otwórz Wersję Mobilną (szachy8.html)</a>
         </div>
 
-        <!-- 3. WARCABY & SIEĆ (MODUŁ 6) -->
-        <div class="game-panel" id="panel-checkers" data-keywords="warcaby checkery p2p sieciowe dmuchnięcie pokoje czat 6 sxsus admin">
+        <!-- 3. SZACHY 9 (MODUŁ 9) -->
+        <div class="game-panel" id="panel-chess-9" data-keywords="szachy chess 9 tryb turniejowy blitz speed">
+            <h2>⚡ Kryptowe Szachy 9 (Turniej Blitz)</h2>
+            <p class="game-desc">Dynamiczny tryb błyskawiczny (Blitz) z ograniczeniem czasowym, szybkimi rundami oraz specjalnymi modyfikatorami punktów i rang.</p>
+            
+            <div class="features-section">
+                <h4>Główne funkcje:</h4>
+                <div class="features-list">
+                    <div class="feature-badge"><strong>Zegary Blitz</strong><span>Dynamiczna kontrola czasu.</span></div>
+                    <div class="feature-badge"><strong>System Rang</strong><span>Awansuj w tabeli liderów.</span></div>
+                    <div class="feature-badge"><strong>Szybkie Starcie</strong><span>Błyskawiczne pojedynek z botami.</span></div>
+                </div>
+            </div>
+
+            <a href="szachy9.html" class="btn" style="background: #d97706; margin-top: auto;">Otwórz Szachy 9 (szachy9.html)</a>
+        </div>
+
+        <!-- 4. SZACHY 10 (MODUŁ 10) -->
+        <div class="game-panel" id="panel-chess-10" data-keywords="szachy chess 10 puzzle taktyka zadania">
+            <h2>🧩 Kryptowe Szachy 10 (Puzzle Master)</h2>
+            <p class="game-desc">Zaawansowany moduł zadań szachowych i łamigłówek taktycznych. Rozwiązuj maty w 2 i 3 posunięciach, zdobywając odłamki.</p>
+            
+            <div class="features-section">
+                <h4>Główne funkcje:</h4>
+                <div class="features-list">
+                    <div class="feature-badge"><strong>Setki Zadań</strong><span>Trening taktyki i matów.</span></div>
+                    <div class="feature-badge"><strong>Nagrody w Odłamkach</strong><span>Zdobywaj walutę za rozwiązania.</span></div>
+                    <div class="feature-badge"><strong>Analiza Błędów</strong><span>Wskazówki przy trudnych łamigłówkach.</span></div>
+                </div>
+            </div>
+
+            <a href="szachy10.html" class="btn" style="background: #2563eb; margin-top: auto;">Otwórz Szachy 10 (szachy10.html)</a>
+        </div>
+
+        <!-- 5. WARCABY & SIEĆ (MODUŁ 6) -->
+        <div class="game-panel" id="panel-checkers" data-keywords="warcaby checkery p2p sieciowe dmuchnięcie pokoje czat 6">
             <h2>☩ Kryptowe Warcaby & Sieć</h2>
-            <p class="game-desc">Klasyczne polskie warcaby 8x8 z zasadą dmuchnięcia, biciem wstecz, globalnym czatem społeczności oraz pokojami sieciowymi P2P i Panelem Administratora.</p>
+            <p class="game-desc">Klasyczne polskie warcaby 8x8 z zasadą dmuchnięcia, biciem wstecz, globalnym czatem społeczności oraz pokojami sieciowymi P2P.</p>
             
             <div class="features-section">
                 <h4>Główne funkcje:</h4>
@@ -150,6 +184,8 @@ function filterLobby() {
     const panels = [
         document.getElementById('panel-chess-desk'),
         document.getElementById('panel-chess-mob'),
+        document.getElementById('panel-chess-9'),
+        document.getElementById('panel-chess-10'),
         document.getElementById('panel-checkers')
     ];
 
