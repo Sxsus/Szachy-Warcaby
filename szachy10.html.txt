@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krypta — Kryptowe Szachy 10 (Tryby Czasowe & Pokoje)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #0c0a0f;
+            --bg-panel: #16131c;
+            --bg-header: #110e15;
+            --text-main: #b5afc0;
+            --text-bright: #f5f2fa;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --gold: #d4af37;
+            --board-light: #e0d0b8;
+            --board-dark: #5c4033;
+            --border: #2a2433;
+        }
+        [data-theme="light"] {
+            --bg-main: #f3f4f6;
+            --bg-panel: #ffffff;
+            --bg-header: #e5e7eb;
+            --text-main: #4b5563;
+            --text-bright: #111827;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --gold: #d97706;
+            --board-light: #ebecd0;
+            --board-dark: #739552;
+            --border: #d1d5db;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: var(--bg-main); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+        
+        header { background: var(--bg-header); border-bottom: 1px solid var(--border); padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 10; }
+        .brand { font-size: 1.3rem; font-weight: 800; color: var(--text-bright); display: flex; gap: 10px; align-items: center; }
+        .brand span { color: var(--accent); }
+        .header-stats { display: flex; gap: 16px; align-items: center; font-size: 0.9rem; font-weight: 700; color: var(--text-bright); }
+
+        main { flex-grow: 1; max-width: 1400px; width: 100%; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+        /* Modal rejestracji/logowania (wymagany do gry online z człowiekiem) */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(6px); }
+        .modal-overlay.hidden { display: none; }
+        .auth-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 32px; width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+        .auth-card h2 { color: var(--text-bright); font-size: 1.5rem; text-align: center; }
+        .auth-tabs { display: flex; gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .auth-tab { background: none; border: none; color: var(--text-main); font-weight: 700; cursor: pointer; font-size: 1rem; flex: 1; text-align: center; padding: 6px; border-radius: 6px; }
+        .auth-tab.active { background: var(--accent); color: #fff; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 0.85rem; color: var(--text-bright); font-weight: 600; }
+
+        /* Układ główny gry */
+        .game-layout { display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start; }
+        @media (max-width: 1100px) { .game-layout { grid-template-columns: 1fr; } }
+
+        .panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+        .panel h3 { color: var(--text-bright); font-size: 1.1rem; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+
+        /* Szachownica */
+        .board-container { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .board-wrapper { width: 100%; aspect-ratio: 1; max-width: 460px; }
+        .board { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); width: 100%; height: 100%; border: 3px solid var(--border); border-radius: 8px; box-shadow: 0 8px 25px rgba(0,0,0,0.4); user-select: none; }
+        .sq { display: flex; align-items: center; justify-content: center; font-size: 2.6rem; cursor: pointer; position: relative; }
+        .sq.light { background: var(--board-light); }
+        .sq.dark { background: var(--board-dark); }
+        .sq.selected { background: rgba(255, 215, 0, 0.5) !important; box-shadow: inset 0 0 0 3px #ffd700; }
+        .sq.legal-target::after { content: ''; width: 16px; height: 16px; background: rgba(0,0,0,0.4); border-radius: 50%; position: absolute; }
+        .sq.check-danger { background: radial-gradient(circle, #ef4444 30%, transparent 80%) !important; }
+        .sq span { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)); font-weight: 900; }
+
+        .timers-row { display: flex; justify-content: space-between; width: 100%; max-width: 460px; font-weight: 700; font-size: 1rem; color: var(--text-bright); }
+        .timer-badge { background: var(--bg-main); border: 1px solid var(--border); padding: 6px 14px; border-radius: 8px; font-family: monospace; }
+        .timer-badge.active { border-color: var(--accent); box-shadow: 0 0 10px rgba(37,99,235,0.3); }
+
+        .controls-row { display: flex; gap: 10px; width: 100%; max-width: 460px; }
+
+        /* Panel linku i konta */
+        .link-share-box { background: var(--bg-main); border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .link-row { display: flex; gap: 8px; }
+
+        .btn { background: var(--accent); color: #fff; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; text-align: center; text-decoration: none; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: block; width: 100%; }
+        .btn:hover { background: var(--accent-hover); transform: translateY(-2px); }
+        .btn-sec { background: var(--bg-header); color: var(--text-bright); border: 1px solid var(--border); }
+        .btn-sec:hover { border-color: var(--text-main); }
+
+        input, select { width: 100%; padding: 11px; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-bright); border-radius: 8px; font-size: 0.92rem; outline: none; }
+        input:focus { border-color: var(--accent); }
+    </style>
+</head>
+<body>
+
+<!-- MODAL WYMAGANIA KONT DO GRY Z CZŁOWIEKIEM PRZEZ LINK -->
+<div class="modal-overlay" id="auth-modal">
+    <div class="auth-card">
+        <h2 id="auth-title">Wymagane Konto w Krypcie</h2>
+        <p style="font-size: 0.88rem; text-align: center; color: var(--text-main);">Aby zagrać partię z człowiekiem przez link, musisz posiadać zarejestrowane konto!</p>
+        
+        <div class="auth-tabs">
+            <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Logowanie</button>
+            <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Rejestracja</button>
+        </div>
+        
+        <div class="form-group" id="group-nick" style="display:none;">
+            <label>Nazwa Gracza (Nick)</label>
+            <input type="text" id="input-reg-nick" placeholder="np. Szymon">
+        </div>
+        <div class="form-group">
+            <label>Adres E-mail</label>
+            <input type="email" id="input-email" placeholder="gracz@krypta.pl">
+        </div>
+        <div class="form-group">
+            <label>Hasło</label>
+            <input type="password" id="input-password" placeholder="••••••••">
+        </div>
+
+        <button class="btn" id="auth-submit-btn" onclick="handleAuthSubmit()">Zaloguj się i Dołącz</button>
+    </div>
+</div>
+
+<header>
+    <div class="brand">🧩 <span>Kryptowe Szachy 10 (Tryby Czasowe & Linki)</span></div>
+    <div class="header-stats">
+        <span>Konto: <strong id="header-nick" style="color:var(--gold);">Gość</strong></span>
+        <span>🪙 <strong id="header-shards">250</strong></span>
+        <a href="index.html" class="btn btn-sec" style="padding: 6px 14px; font-size:0.8rem;">← Hub</a>
+    </div>
+</header>
+
+<main>
+    <div class="game-layout">
+        <!-- LEWA STRONA: SZACHOWNICA I CZAS -->
+        <div class="panel board-container">
+            <div class="timers-row">
+                <span>Czarne: <div class="timer-badge" id="timer-black">03:00</div></span>
+                <span id="turn-indicator" style="color:var(--accent);">Ruch: Białe</span>
+                <span>Białe: <div class="timer-badge active" id="timer-white">03:00</div></span>
+            </div>
+
+            <div class="board-wrapper">
+                <div class="board" id="chessboard"></div>
+            </div>
+
+            <div class="controls-row">
+                <button class="btn btn-sec" onclick="undoMove()">↩️ Cofnij</button>
+                <button class="btn btn-sec" onclick="flipBoard()">🔄 Obróć</button>
+                <button class="btn" style="background:#b91c1c;" onclick="resignGame()">🏳️ Poddaj</button>
+            </div>
+        </div>
+
+        <!-- PRAWA STRONA: WYBÓR CZASU ORAZ LINKI DO WSPÓLNEJ PARTI -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div class="panel">
+                <h3>⏱️ Wybór Trybu Czasowego</h3>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <label style="font-size:0.85rem; font-weight:600;">Wybierz tempo (minuty + inkrementacja w sekundach):</label>
+                    <select id="time-control-select" onchange="changeTimeControl()">
+                        <option value="1+1">1 + 1 (Bullet)</option>
+                        <option value="2+2">2 + 2 (Bullet)</option>
+                        <option value="3">3 + 0 (Blitz)</option>
+                        <option value="3+2" selected>3 + 2 (Blitz)</option>
+                        <option value="5">5 + 0 (Blitz)</option>
+                        <option value="5+2">5 + 2 (Blitz)</option>
+                        <option value="10">10 + 0 (Rapid)</option>
+                        <option value="15">15 + 0 (Rapid)</option>
+                        <option value="10+15">10 + 15 (Classical)</option>
+                    </select>
+                    <button class="btn" onclick="restartGame()">🔄 Resetuj Partię</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>🔗 Gra z Człowiekiem przez Link</h3>
+                <p style="font-size: 0.88rem; line-height: 1.4;">Wyślij link znajomemu. **Wymagane jest konto**, aby zagrać partię sieciową!</p>
+                
+                <div class="link-share-box">
+                    <label style="font-size:0.82rem; font-weight:700; color:var(--text-bright);">Link Zaproszenia:</label>
+                    <div class="link-row">
+                        <input type="text" id="share-link-input" readonly style="font-size:0.8rem;">
+                        <button class="btn" style="width: auto; padding: 8px 14px;" onclick="copyGameLink()">Kopiuj</button>
+                    </div>
+                </div>
+                <button class="btn" style="background:var(--accent);" onclick="generateNewRoom()">Stwórz Nowy Pokój Sieciowy</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+let chess = new Chess();
+let selectedSq = null;
+let boardFlipped = false;
+let isUserLoggedIn = false;
+let authMode = 'login';
+let currentUser = { nick: 'Gość', email: '', shards: 250 };
+
+let whiteTime = 180;
+let blackTime = 180;
+let whiteInc = 2;
+let blackInc = 2;
+let timerInterval = null;
+let gameActive = true;
+
+const pieceSymbols = { 'p':'♟','r':'♜','n':'♞','b':'♝','q':'♛','k':'♚','P':'♙','R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔' };
+
+function checkURLForRoom() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('room')) {
+        if (!isUserLoggedIn) {
+            document.getElementById('auth-modal').classList.remove('hidden');
+        }
+    }
+}
+
+function switchAuthTab(mode) {
+    authMode = mode;
+    const title = document.getElementById('auth-title');
+    const submitBtn = document.getElementById('auth-submit-btn');
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const groupNick = document.getElementById('group-nick');
+
+    if (mode === 'login') {
+        title.innerText = "Zaloguj się do Krypty";
+        submitBtn.innerText = "Zaloguj się i Dołącz";
+        tabLogin.classList.add('active');
+        tabRegister.classList.remove('active');
+        groupNick.style.display = 'none';
+    } else {
+        title.innerText = "Utwórz Konto w Krypcie";
+        submitBtn.innerText = "Zarejestruj i Dołącz";
+        tabRegister.classList.add('active');
+        tabLogin.classList.remove('active');
+        groupNick.style.display = 'flex';
+    }
+}
+
+function handleAuthSubmit() {
+    const email = document.getElementById('input-email').value.trim();
+    const pass = document.getElementById('input-password').value.trim();
+    const nickInput = document.getElementById('input-reg-nick').value.trim();
+
+    if (!email || !pass) {
+        alert("Wypełnij wymagane pola e-mail i hasło!");
+        return;
+    }
+
+    isUserLoggedIn = true;
+    currentUser.email = email;
+    currentUser.nick = nickInput || (email.toLowerCase().includes('szymon') ? 'Szymon' : 'GraczKrypty');
+
+    document.getElementById('header-nick').innerText = currentUser.nick;
+    document.getElementById('auth-modal').classList.add('hidden');
+    saveUserData();
+    alert("Zalogowano pomyślnie! Możesz kontynuować partię z człowiekiem.");
+}
+
+function saveUserData() {
+    try {
+        localStorage.setItem('cryptic_chess_v3', JSON.stringify({
+            nick: currentUser.nick,
+            shards: currentUser.shards
+        }));
+    } catch(e){}
+}
+
+function generateNewRoom() {
+    if (!isUserLoggedIn) {
+        document.getElementById('auth-modal').classList.remove('hidden');
+        return;
+    }
+    const roomId = Math.random().toString(36).substring(2, 9);
+    const fullLink = window.location.origin + window.location.pathname + "?room=" + roomId;
+    document.getElementById('share-link-input').value = fullLink;
+    alert("Utworzono pokój sieciowy! Skopiuj link i wyślij znajomemu.");
+}
+
+function copyGameLink() {
+    const input = document.getElementById('share-link-input');
+    if (!input.value) {
+        generateNewRoom();
+        return;
+    }
+    input.select();
+    document.execCommand('copy');
+    alert("Skopiowano link do schowka!");
+}
+
+function changeTimeControl() {
+    const val = document.getElementById('time-control-select').value;
+    if (val.includes('+')) {
+        const parts = val.split('+');
+        const mins = parseInt(parts[0]);
+        const inc = parseInt(parts[1]);
+        whiteTime = mins * 60;
+        blackTime = mins * 60;
+        whiteInc = inc;
+        blackInc = inc;
+    } else {
+        const mins = parseInt(val);
+        whiteTime = mins * 60;
+        blackTime = mins * 60;
+        whiteInc = 0;
+        blackInc = 0;
+    }
+    restartGame();
+}
+
+function restartGame() {
+    chess.reset();
+    selectedSq = null;
+    gameActive = true;
+    renderBoard();
+    startTimer();
+}
+
+function startTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        if (!gameActive) return;
+        if (chess.turn() === 'w') {
+            whiteTime--;
+            if (whiteTime <= 0) {
+                whiteTime = 0;
+                endGame("Czas minął! Czarne wygrywają przez czas.");
+            }
+        } else {
+            blackTime--;
+            if (blackTime <= 0) {
+                blackTime = 0;
+                endGame("Czas minął! Białe wygrywają przez czas.");
+            }
+        }
+        updateTimersDisplay();
+    }, 1000);
+}
+
+function updateTimersDisplay() {
+    document.getElementById('timer-white').innerText = formatTime(whiteTime);
+    document.getElementById('timer-black').innerText = formatTime(blackTime);
+    document.getElementById('turn-indicator').innerText = "Ruch: " + (chess.turn() === 'w' ? 'Białe' : 'Czarne');
+    
+    if (chess.turn() === 'w') {
+        document.getElementById('timer-white').classList.add('active');
+        document.getElementById('timer-black').classList.remove('active');
+    } else {
+        document.getElementById('timer-black').classList.add('active');
+        document.getElementById('timer-white').classList.remove('active');
+    }
+}
+
+function formatTime(secs) {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+}
+
+function endGame(msg) {
+    gameActive = false;
+    clearInterval(timerInterval);
+    alert(msg);
+}
+
+function renderBoard() {
+    const boardEl = document.getElementById('chessboard');
+    boardEl.innerHTML = '';
+    const legalMoves = selectedSq ? chess.moves({ square: selectedSq, verbose: true }).map(m => m.to) : [];
+
+    for (let i = 0; i < 64; i++) {
+        const r = boardFlipped ? Math.floor(i / 8) : 7 - Math.floor(i / 8);
+        const c = boardFlipped ? 7 - (i % 8) : i % 8;
+        const alg = String.fromCharCode(97 + c) + (r + 1);
+
+        const sq = document.createElement('div');
+        sq.className = `sq ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+        if (selectedSq === alg) sq.classList.add('selected');
+        if (legalMoves.includes(alg)) sq.classList.add('legal-target');
+
+        const p = chess.get(alg);
+        if (p) {
+            if (p.type === 'k' && chess.in_check() && p.color === chess.turn()) {
+                sq.classList.add('check-danger');
+            }
+            const span = document.createElement('span');
+            span.style.color = p.color === 'w' ? '#ffffff' : '#111111';
+            span.innerText = p.color === 'w' ? pieceSymbols[p.type.toUpperCase()] : pieceSymbols[p.type];
+            sq.appendChild(span);
+        }
+
+        sq.onclick = () => handleSquareClick(alg);
+        boardEl.appendChild(sq);
+    }
+    updateTimersDisplay();
+}
+
+function handleSquareClick(alg) {
+    if (!gameActive) return;
+    if (!selectedSq) {
+        const p = chess.get(alg);
+        if (p && p.color === chess.turn()) {
+            selectedSq = alg;
+            renderBoard();
+        }
+        return;
+    }
+
+    const move = chess.move({ from: selectedSq, to: alg, promotion: 'q' });
+    if (move) {
+        if (move.color === 'w') whiteTime += whiteInc;
+        else blackTime += blackInc;
+
+        selectedSq = null;
+        renderBoard();
+        if (chess.game_over()) {
+            endGame("Koniec partii!");
+        }
+    } else {
+        const p = chess.get(alg);
+        if (p && p.color === chess.turn()) {
+            selectedSq = alg;
+        } else {
+            selectedSq = null;
+        }
+        renderBoard();
+    }
+}
+
+function undoMove() {
+    chess.undo();
+    chess.undo();
+    selectedSq = null;
+    renderBoard();
+}
+
+function flipBoard() {
+    boardFlipped = !boardFlipped;
+    renderBoard();
+}
+
+function resignGame() {
+    if (confirm("Poddajesz partię?")) {
+        endGame("Partia zakończona poddaniem.");
+    }
+}
+
+function initApp() {
+    try {
+        let raw = localStorage.getItem('cryptic_chess_v3');
+        if (raw) {
+            const st = JSON.parse(raw);
+            if (st.settings && st.settings.lightTheme) document.documentElement.setAttribute('data-theme', 'light');
+            currentUser.nick = st.nick || 'Szymon';
+            currentUser.shards = st.shards ?? 250;
+            isUserLoggedIn = true;
+            document.getElementById('header-nick').innerText = currentUser.nick;
+            document.getElementById('header-shards').innerText = currentUser.shards;
+        }
+    } catch(e){}
+
+    checkURLForRoom();
+    changeTimeControl();
+}
+
+initApp();
+</script>
+</body>
+</html>
+```[cite: 11]
