@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Krypta Szachów i Gier — Główny Hub</title>
+    <title>Krypta — Główny Hub Gier Planszowych</title>
     <style>
         :root {
             --bg-main: #0c0a0f;
@@ -11,8 +11,8 @@
             --bg-header: #110e15;
             --text-main: #b5afc0;
             --text-bright: #f5f2fa;
-            --accent: #9b111e;
-            --accent-hover: #c41e3a;
+            --accent: #7c3aed;
+            --accent-hover: #8b5cf6;
             --gold: #d4af37;
             --border: #2a2433;
         }
@@ -22,33 +22,43 @@
             --bg-header: #e5e7eb;
             --text-main: #4b5563;
             --text-bright: #111827;
-            --accent: #81b64c;
-            --accent-hover: #95cc5e;
+            --accent: #6d28d9;
+            --accent-hover: #7c3aed;
             --gold: #d97706;
             --border: #d1d5db;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background: var(--bg-main); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; transition: 0.3s; }
         
-        header { background: var(--bg-header); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-        .brand { font-size: 1.4rem; font-weight: 800; color: var(--text-bright); display: flex; gap: 10px; align-items: center; }
+        header { background: var(--bg-header); border-bottom: 1px solid var(--border); padding: 18px 36px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 10; }
+        .brand { font-size: 1.5rem; font-weight: 800; color: var(--text-bright); display: flex; gap: 12px; align-items: center; }
         .brand span { color: var(--accent); }
-        .user-badge { display: flex; gap: 16px; align-items: center; background: var(--bg-panel); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; }
+        .header-stats { display: flex; gap: 20px; align-items: center; font-size: 0.95rem; font-weight: 700; color: var(--text-bright); }
+        
+        main { flex-grow: 1; max-width: 1600px; width: 100%; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 28px; }
+        
+        .welcome-banner { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 28px 36px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); text-align: center; }
+        .welcome-banner h1 { color: var(--text-bright); font-size: 1.8rem; margin-bottom: 8px; }
+        .welcome-banner p { font-size: 1rem; color: var(--text-main); }
 
-        main { flex-grow: 1; max-width: 1300px; width: 100%; margin: 0 auto; padding: 30px 20px; display: flex; flex-direction: column; gap: 30px; }
+        /* Główne Lobby: Lewa strona Szachy, Prawa Warcaby */
+        .lobby-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+        @media (max-width: 1100px) { .lobby-grid { grid-template-columns: 1fr; } }
 
-        .hero { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 32px; display: flex; flex-direction: column; gap: 12px; position: relative; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-        .hero h1 { color: var(--text-bright); font-size: 2rem; }
-        .hero p { font-size: 1rem; max-width: 850px; line-height: 1.5; }
+        .game-panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+        .game-panel h2 { color: var(--text-bright); font-size: 1.4rem; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
 
-        .modules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
-        .mod-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; justify-content: space-between; gap: 16px; transition: 0.25s; position: relative; }
-        .mod-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 6px 24px rgba(0,0,0,0.4); }
-        .mod-card h3 { color: var(--text-bright); font-size: 1.25rem; display: flex; align-items: center; gap: 10px; }
-        .mod-card p { font-size: 0.9rem; line-height: 1.45; }
+        /* Lista funkcji w szachach */
+        .features-section { display: flex; flex-direction: column; gap: 10px; }
+        .features-section h4 { color: var(--text-bright); font-size: 0.95rem; margin-top: 4px; }
+        .features-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 260px; overflow-y: auto; padding-right: 4px; }
+        .feature-badge { background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 0.83rem; display: flex; flex-direction: column; gap: 2px; }
+        .feature-badge strong { color: var(--text-bright); font-size: 0.88rem; }
 
-        .btn { background: var(--accent); color: #fff; border: none; padding: 10px 18px; border-radius: 6px; font-weight: 700; cursor: pointer; transition: 0.2s; text-align: center; text-decoration: none; display: inline-block; font-size: 0.9rem; }
-        .btn:hover { background: var(--accent-hover); }
+        .game-desc { font-size: 0.92rem; line-height: 1.5; }
+
+        .btn { background: var(--accent); color: #fff; border: none; padding: 14px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; text-align: center; text-decoration: none; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: block; }
+        .btn:hover { background: var(--accent-hover); transform: translateY(-2px); }
         .btn-sec { background: var(--bg-header); color: var(--text-bright); border: 1px solid var(--border); }
         .btn-sec:hover { border-color: var(--text-main); }
     </style>
@@ -56,105 +66,78 @@
 <body>
 
 <header>
-    <div class="brand">🏰 KRYPTA <span>SZACHÓW & GIER</span></div>
-    <div class="user-badge">
-        <span>Gracz: <strong id="hub-nick" style="color:var(--text-bright);">Szymon</strong></span>
-        <span>🪙 <strong id="hub-shards" style="color:var(--gold);">250</strong> Odłamków</span>
+    <div class="brand">👑 KRYPTA <span>CENTRUM ROZGRYWKI</span></div>
+    <div class="header-stats">
+        <span>Gracz: <strong id="header-nick" style="color:var(--gold);">Szymon</strong></span>
+        <span>🪙 <strong id="header-shards">250</strong> Odłamków</span>
     </div>
 </header>
 
 <main>
-    <div class="hero">
-        <h1>Witaj w Głównym Hubie Krypt!</h1>
-        <p>Wszystkie moduły platformy są w pełni zintegrowane. Wybierz odpowiednią arenę, przetestuj skaner PGN, weź udział w turniejach lub zarządzaj swoim kontem i ekwipunkiem.</p>
+    <div class="welcome-banner">
+        <h1>Witaj w Głównym Hubie Krypt, Szymon!</h1>
+        <p>Wybierz preferowaną dyscyplinę na autorskiej platformie. Przejdź do pełnego pakietu szachowego lub rozpocznij starcie w warcaby.</p>
     </div>
 
-    <div class="modules-grid" id="modules-list">
-        <!-- Moduł 1 -->
-        <div class="mod-card">
-            <div>
-                <h3>♞ Moduł 1: Szachy & Trenerzy AI</h3>
-                <p>Klasyczne szachy, Szachy 960 (Fischer Random), Król Wzgórza oraz pojedynek z arcymistrzami (Magnus, Hikaru, Fischer) i botami z Mrocznym Werdyktem.</p>
+    <div class="lobby-grid">
+        <!-- LEWA STRONA: SZACHY (Z PEŁNĄ LISTĄ WSZYSTKICH FUNKCJI) -->
+        <div class="game-panel">
+            <h2>♞ Kryptowe Szachy (Pakiet Ultimate)</h2>
+            <p class="game-desc">Najbardziej zaawansowany moduł strategiczny na platformie. Zawiera pełny pakiet 50 funkcji, symulator sparingów z 20 botami oraz zaawansowaną analizę partii.</p>
+            
+            <div class="features-section">
+                <h4>Wszystkie funkcje dostępne w szachach:</h4>
+                <div class="features-list">
+                    <div class="feature-badge"><strong>Silnik AI & Trenerzy</strong><span>20 botów + Kokoszka i Fischer</span></div>
+                    <div class="feature-badge"><strong>Fizyczne Drag & Drop</strong><span>Chwytanie i upuszczanie bierek</span></div>
+                    <div class="feature-badge"><strong>Auto-Cofanie Błędów</strong><span>Automatyczny powrót przy faulu</span></div>
+                    <div class="feature-badge"><strong>Archiwum PGN</strong><span>Zapis i podgląd notacji partii</span></div>
+                    <div class="feature-badge"><strong>Pasek Ewaluacji Live</strong><span>Wizualna przewaga stron</span></div>
+                    <div class="feature-badge"><strong>Ostrzeżenie o Szachu</strong><span>Czerwona poświata na królu</span></div>
+                    <div class="feature-badge"><strong>Skaner PGN</strong><span>Wklejanie zapisów z turniejów</span></div>
+                    <div class="feature-badge"><strong>Akademia Debiutów</strong><span>Baza wiedzy i gambitów</span></div>
+                    <div class="feature-badge"><strong>Zegary Czasowe</strong><span>Bullet, Blitz i kontrola czasu</span></div>
+                    <div class="feature-badge"><strong>System Anti-Cheat</strong><span>Blokada oszustw i ban na nick</span></div>
+                </div>
             </div>
-            <a href="szachy1.html" class="btn">Otwórz Moduł 1</a>
+
+            <a href="szachy7.html" class="btn" style="margin-top: auto;">Przejdź do Kryptowych Szachów (szachy7.html)</a>
         </div>
 
-        <!-- Moduł 2 -->
-        <div class="mod-card">
+        <!-- PRAWA STRONA: WARCABY -->
+        <div class="game-panel" style="justify-content: space-between;">
             <div>
-                <h3>☩ Moduł 2: Polskie Warcaby & P2P</h3>
-                <p>Warcaby polskie 8x8 z zasadą dmuchnięcia, biciem wstecz oraz multiplayerem P2P przez PeerJS z kodami połączenia.</p>
+                <h2>☩ Kryptowe Warcaby</h2>
+                <p class="game-desc" style="margin-bottom: 20px;">Klasyczne polskie warcaby 8x8 wzbogacone o unikalne zasady strategiczne, tryb multiplayer P2P, tradycyjną zasadę dmuchnięcia oraz bicie do tyłu przez damki.</p>
+                
+                <div class="features-section">
+                    <h4>Najważniejsze cechy warcabów:</h4>
+                    <div class="features-list" style="grid-template-columns: 1fr;">
+                        <div class="feature-badge"><strong>Zasada Dmuchnięcia</strong><span>Kary za pominięcie bicia pionka.</span></div>
+                        <div class="feature-badge"><strong>Bicie Wstecz</strong><span>Damki i zwykłe pionki w dynamicznych starciach.</span></div>
+                        <div class="feature-badge"><strong>Sieciowe Pokoje P2P</strong><span>Rozgrywka ze znajomymi przez kody sesji.</span></div>
+                    </div>
+                </div>
             </div>
-            <a href="szachy2.html" class="btn" style="background:#2e8b57;">Otwórz Moduł 2</a>
-        </div>
 
-        <!-- Moduł 3 -->
-        <div class="mod-card">
-            <div>
-                <h3>🪙 Moduł 3: Skarbiec, Zadania & Ustawienia</h3>
-                <p>Skarbiec ekskluzywnych skinów figur, codzienne wyzwania, Koło Fortuny Cienia oraz kompletny panel 15 ustawień systemowych i profilu.</p>
-            </div>
-            <a href="szachy3.html" class="btn" style="background:#d4af37; color:#111;">Otwórz Moduł 3</a>
-        </div>
-
-        <!-- Moduł 4 -->
-        <div class="mod-card">
-            <div>
-                <h3>🔍 Moduł 4: Skaner PGN & Zagadki Taktyczne</h3>
-                <p>Wklej zapis PGN swojej partii, uruchom skaner analizujący błędy i zagrania genialne oraz rozwiązuj codzienne zagadki taktyczne.</p>
-            </div>
-            <a href="szachy4.html" class="btn" style="background:#1d4ed8;">Otwórz Moduł 4</a>
-        </div>
-
-        <!-- Moduł 5 -->
-        <div class="mod-card">
-            <div>
-                <h3>🏆 Moduł 5: Tryb Turniejowy & Arena</h3>
-                <p>Dołącz do turniejów systemem szwajcarskim lub Arena, walcz o puchar Krypty i śledź tabelę wyników live z arcymistrzami.</p>
-            </div>
-            <a href="szachy5.html" class="btn" style="background:#7c3aed;">Otwórz Moduł 5</a>
-        </div>
-
-        <!-- Moduł 6 -->
-        <div class="mod-card">
-            <div>
-                <h3>🌐 Moduł 6: Centrum Sieciowe & Lobby</h3>
-                <p>Globalne lobby czatu, tworzenie publicznych i prywatnych pokoi gier, rankingi online oraz historia potyczek.</p>
-            </div>
-            <a href="szachy6.html" class="btn" style="background:#b45309;">Otwórz Moduł 6</a>
+            <a href="szachy6.html" class="btn btn-sec" style="text-align: center;">Przejdź do Warcabów & Sieci</a>
         </div>
     </div>
 </main>
 
 <script>
-function initHub() {
+function initHubData() {
     try {
         let raw = localStorage.getItem('cryptic_chess_v3');
-        if (!raw) {
-            const initial = {
-                nick: "Szymon",
-                shards: 250,
-                elo: { chessBot: 1200, checkersBot: 1200 },
-                settings: { lightTheme: false }
-            };
-            localStorage.setItem('cryptic_chess_v3', JSON.stringify(initial));
-            raw = JSON.stringify(initial);
+        if (raw) {
+            const st = JSON.parse(raw);
+            if (st.settings && st.settings.lightTheme) document.documentElement.setAttribute('data-theme', 'light');
+            document.getElementById('header-nick').innerText = st.nick || 'Szymon';
+            document.getElementById('header-shards').innerText = st.shards ?? 250;
         }
-        const st = JSON.parse(raw);
-        if (st.settings && st.settings.lightTheme) {
-            document.documentElement.setAttribute('data-theme', 'light');
-        } else {
-            document.documentElement.setAttribute('data-theme', 'dark');
-        }
-        document.getElementById('hub-nick').innerText = st.nick || "Szymon";
-        document.getElementById('hub-shards').innerText = st.shards ?? 250;
-    } catch(e) {}
+    } catch(e){}
 }
-
-// Odświeżaj dane huba po powrocie do karty
-window.addEventListener('focus', initHub);
-initHub();
+initHubData();
 </script>
-<script src="optimizer.js"></script>
 </body>
 </html>
