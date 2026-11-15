@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Krypta Szachów & Warcabów — Portal Główny (Hub)</title>
+    <title>Krypta Szachów i Gier — Główny Hub</title>
     <style>
         :root {
             --bg-main: #0c0a0f;
-            --bg-card: #16131c;
+            --bg-panel: #16131c;
             --bg-header: #110e15;
             --text-main: #b5afc0;
             --text-bright: #f5f2fa;
@@ -18,7 +18,7 @@
         }
         [data-theme="light"] {
             --bg-main: #f3f4f6;
-            --bg-card: #ffffff;
+            --bg-panel: #ffffff;
             --bg-header: #e5e7eb;
             --text-main: #4b5563;
             --text-bright: #111827;
@@ -30,209 +30,131 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background: var(--bg-main); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; transition: 0.3s; }
         
-        header { background: var(--bg-header); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-        .brand { font-size: 1.35rem; font-weight: 800; color: var(--text-bright); letter-spacing: 1px; }
+        header { background: var(--bg-header); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .brand { font-size: 1.4rem; font-weight: 800; color: var(--text-bright); display: flex; gap: 10px; align-items: center; }
         .brand span { color: var(--accent); }
-        .header-controls { display: flex; align-items: center; gap: 14px; font-size: 0.88rem; }
-        .badge { background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold); color: var(--gold); padding: 4px 12px; border-radius: 20px; font-weight: 700; }
+        .user-badge { display: flex; gap: 16px; align-items: center; background: var(--bg-panel); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; }
 
-        main { flex-grow: 1; max-width: 1280px; width: 100%; margin: 0 auto; padding: 28px 20px; display: flex; flex-direction: column; gap: 24px; }
-        
-        .hero { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 26px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
-        .hero h1 { color: var(--text-bright); font-size: 1.6rem; margin-bottom: 6px; }
-        .hero p { font-size: 0.92rem; max-width: 680px; line-height: 1.5; }
+        main { flex-grow: 1; max-width: 1300px; width: 100%; margin: 0 auto; padding: 30px 20px; display: flex; flex-direction: column; gap: 30px; }
 
-        .elo-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
-        .elo-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; }
-        .elo-box small { font-size: 0.75rem; text-transform: uppercase; display: block; margin-bottom: 4px; }
-        .elo-box strong { font-size: 1.45rem; color: var(--text-bright); }
+        .hero { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 32px; display: flex; flex-direction: column; gap: 12px; position: relative; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .hero h1 { color: var(--text-bright); font-size: 2rem; }
+        .hero p { font-size: 1rem; max-width: 850px; line-height: 1.5; }
 
-        .modules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 20px; }
-        .module-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; transition: transform 0.2s, border-color 0.2s; }
-        .module-card:hover { transform: translateY(-4px); border-color: var(--accent); }
-        .module-tag { display: inline-block; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: var(--gold); letter-spacing: 0.8px; margin-bottom: 6px; }
-        .module-card h2 { color: var(--text-bright); font-size: 1.25rem; margin-bottom: 8px; }
-        .module-card p { font-size: 0.88rem; line-height: 1.5; }
-        .module-list { list-style: none; font-size: 0.83rem; display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
-        .module-list li::before { content: '✦ '; color: var(--accent); }
+        .modules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .mod-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; justify-content: space-between; gap: 16px; transition: 0.25s; position: relative; }
+        .mod-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 6px 24px rgba(0,0,0,0.4); }
+        .mod-card h3 { color: var(--text-bright); font-size: 1.25rem; display: flex; align-items: center; gap: 10px; }
+        .mod-card p { font-size: 0.9rem; line-height: 1.45; }
 
-        .btn-group { display: flex; gap: 8px; }
-        .btn { flex: 1; background: var(--accent); color: #fff; border: none; padding: 11px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.9rem; text-decoration: none; text-align: center; transition: 0.2s; }
+        .btn { background: var(--accent); color: #fff; border: none; padding: 10px 18px; border-radius: 6px; font-weight: 700; cursor: pointer; transition: 0.2s; text-align: center; text-decoration: none; display: inline-block; font-size: 0.9rem; }
         .btn:hover { background: var(--accent-hover); }
         .btn-sec { background: var(--bg-header); color: var(--text-bright); border: 1px solid var(--border); }
         .btn-sec:hover { border-color: var(--text-main); }
-
-        /* Wbudowany tryb podglądu (Iframe Hub) */
-        #embedded-frame-wrap { display: none; flex-direction: column; gap: 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
-        .frame-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; }
-        iframe { width: 100%; height: 78vh; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-main); }
-
-        footer { text-align: center; padding: 16px; font-size: 0.8rem; border-top: 1px solid var(--border); background: var(--bg-header); }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="brand">♞ KRYPTA <span>CHESS & CHECKERS HUB</span></div>
-    <div class="header-controls">
-        <span class="badge">🪙 <span id="hub-shards">250</span></span>
+    <div class="brand">🏰 KRYPTA <span>SZACHÓW & GIER</span></div>
+    <div class="user-badge">
         <span>Gracz: <strong id="hub-nick" style="color:var(--text-bright);">Szymon</strong></span>
-        <button class="btn btn-sec" style="padding:6px 12px; font-size:0.8rem;" onclick="toggleHubTheme()">🌓 Zmień Motyw</button>
+        <span>🪙 <strong id="hub-shards" style="color:var(--gold);">250</strong> Odłamków</span>
     </div>
 </header>
 
 <main>
-    <!-- Pasek współdzielonych danych konta i ELO -->
-    <div class="elo-bar">
-        <div class="elo-box"><small>Szachy — Ludzie (PvP)</small><strong id="hub-elo-chess-pvp">1200</strong></div>
-        <div class="elo-box"><small>Szachy — Boty & Mistrzowie</small><strong id="hub-elo-chess-bot">1200</strong></div>
-        <div class="elo-box"><small>Warcaby — Ludzie (PvP)</small><strong id="hub-elo-checkers-pvp">1200</strong></div>
-        <div class="elo-box"><small>Warcaby — Boty</small><strong id="hub-elo-checkers-bot">1200</strong></div>
+    <div class="hero">
+        <h1>Witaj w Głównym Hubie Krypt!</h1>
+        <p>Wszystkie moduły platformy są w pełni zintegrowane. Wybierz odpowiednią arenę, przetestuj skaner PGN, weź udział w turniejach lub zarządzaj swoim kontem i ekwipunkiem.</p>
     </div>
 
-    <div class="hero" id="hub-intro">
-        <div>
-            <h1>Witaj w Krypcie Szachów i Warcabów</h1>
-            <p>Wybierz jeden z trzech wyspecjalizowanych modułów platformy. Wszystkie moduły współdzielą Twoje konto, Odłamki Cienia, rankingi ELO oraz silnik optymalizacji <strong>optimizer.js</strong>.</p>
-        </div>
-        <div style="font-size:0.82rem; color:var(--gold);">
-            ⚡ Status silnika: <span id="opt-status">Aktywny (60 FPS Boost)</span>
-        </div>
-    </div>
-
-    <!-- 3 Główne Moduły: szachy1.html, szachy2.html, szachy3.html -->
-    <div class="modules-grid" id="hub-cards">
-        <!-- MODUŁ 1 -->
-        <div class="module-card">
+    <div class="modules-grid" id="modules-list">
+        <!-- Moduł 1 -->
+        <div class="mod-card">
             <div>
-                <span class="module-tag">Moduł 1 • szachy1.html</span>
-                <h2>♟️ Szachy Klasyczne, Boty & Trenerzy</h2>
-                <p>Pełna arena szachowa inspirowana Chess.com z mówiącymi botami (200–3000 ELO) i legendami szachów.</p>
-                <ul class="module-list">
-                    <li>Magnus Carlsen, Hikaru Nakamura, Bobby Fischer</li>
-                    <li>Pasek ewaluacji, Szachy 960, Król Wzgórza</li>
-                    <li>System Koronek (0–3), podpowiedzi i Mroczny Werdykt</li>
-                </ul>
+                <h3>♞ Moduł 1: Szachy & Trenerzy AI</h3>
+                <p>Klasyczne szachy, Szachy 960 (Fischer Random), Król Wzgórza oraz pojedynek z arcymistrzami (Magnus, Hikaru, Fischer) i botami z Mrocznym Werdyktem.</p>
             </div>
-            <div class="btn-group">
-                <a href="szachy1.html" class="btn">Otwórz Pełny Ekran</a>
-                <button class="btn btn-sec" onclick="openEmbedded('szachy1.html', 'Moduł 1: Szachy & Trenerzy')">Uruchom tutaj</button>
-            </div>
+            <a href="szachy1.html" class="btn">Otwórz Moduł 1</a>
         </div>
 
-        <!-- MODUŁ 2 -->
-        <div class="module-card">
+        <!-- Moduł 2 -->
+        <div class="mod-card">
             <div>
-                <span class="module-tag">Moduł 2 • szachy2.html</span>
-                <h2>☩ Polskie Warcaby & Pojedynki P2P</h2>
-                <p>Dynamiczna arena warcabowa 8x8 z zasadami podwórkowymi oraz szybką grą online przez link ze znajomymi.</p>
-                <ul class="module-list">
-                    <li>Polskie warcaby z karą <strong>dmuchnięcia</strong> za brak bicia</li>
-                    <li>Latająca damka, wielokrotne bicia i licznik kombo</li>
-                    <li>Multiplayer P2P przez link i 15s licznik walkowera</li>
-                </ul>
+                <h3>☩ Moduł 2: Polskie Warcaby & P2P</h3>
+                <p>Warcaby polskie 8x8 z zasadą dmuchnięcia, biciem wstecz oraz multiplayerem P2P przez PeerJS z kodami połączenia.</p>
             </div>
-            <div class="btn-group">
-                <a href="szachy2.html" class="btn">Otwórz Pełny Ekran</a>
-                <button class="btn btn-sec" onclick="openEmbedded('szachy2.html', 'Moduł 2: Polskie Warcaby & P2P')">Uruchom tutaj</button>
-            </div>
+            <a href="szachy2.html" class="btn" style="background:#2e8b57;">Otwórz Moduł 2</a>
         </div>
 
-        <!-- MODUŁ 3 -->
-        <div class="module-card">
+        <!-- Moduł 3 -->
+        <div class="mod-card">
             <div>
-                <span class="module-tag">Moduł 3 • szachy3.html</span>
-                <h2>🏰 Skarbiec, Wyzwania, Zadania & Profil</h2>
-                <p>Centrum rozwoju konta, ekonomia Odłamków Cienia, akademia debiutów oraz pełny panel ustawień.</p>
-                <ul class="module-list">
-                    <li>Skarbiec skinów figur (Krwawy Rubin, Widmowy Neon, Złoto)</li>
-                    <li>Wyzwania dzienne/tygodniowe/miesięczne i Koło Fortuny</li>
-                    <li>Zadania dnia, Księga Otwarć, Gildie i 15 opcji ustawień</li>
-                </ul>
+                <h3>🪙 Moduł 3: Skarbiec, Zadania & Ustawienia</h3>
+                <p>Skarbiec ekskluzywnych skinów figur, codzienne wyzwania, Koło Fortuny Cienia oraz kompletny panel 15 ustawień systemowych i profilu.</p>
             </div>
-            <div class="btn-group">
-                <a href="szachy3.html" class="btn">Otwórz Pełny Ekran</a>
-                <button class="btn btn-sec" onclick="openEmbedded('szachy3.html', 'Moduł 3: Skarbiec, Zadania & Profil')">Uruchom tutaj</button>
-            </div>
+            <a href="szachy3.html" class="btn" style="background:#d4af37; color:#111;">Otwórz Moduł 3</a>
         </div>
-    </div>
 
-    <!-- Wbudowany widok modułu wewnątrz index.html -->
-    <div id="embedded-frame-wrap">
-        <div class="frame-toolbar">
-            <strong id="frame-title" style="color:var(--text-bright);">Moduł</strong>
-            <div style="display:flex; gap:8px;">
-                <a id="frame-ext-link" href="#" class="btn btn-sec" style="padding:5px 12px; font-size:0.8rem;">↗ Pełny ekran</a>
-                <button class="btn" style="padding:5px 12px; font-size:0.8rem;" onclick="closeEmbedded()">✕ Wróć do Huba</button>
+        <!-- Moduł 4 -->
+        <div class="mod-card">
+            <div>
+                <h3>🔍 Moduł 4: Skaner PGN & Zagadki Taktyczne</h3>
+                <p>Wklej zapis PGN swojej partii, uruchom skaner analizujący błędy i zagrania genialne oraz rozwiązuj codzienne zagadki taktyczne.</p>
             </div>
+            <a href="szachy4.html" class="btn" style="background:#1d4ed8;">Otwórz Moduł 4</a>
         </div>
-        <iframe id="module-frame" src=""></iframe>
+
+        <!-- Moduł 5 -->
+        <div class="mod-card">
+            <div>
+                <h3>🏆 Moduł 5: Tryb Turniejowy & Arena</h3>
+                <p>Dołącz do turniejów systemem szwajcarskim lub Arena, walcz o puchar Krypty i śledź tabelę wyników live z arcymistrzami.</p>
+            </div>
+            <a href="szachy5.html" class="btn" style="background:#7c3aed;">Otwórz Moduł 5</a>
+        </div>
+
+        <!-- Moduł 6 -->
+        <div class="mod-card">
+            <div>
+                <h3>🌐 Moduł 6: Centrum Sieciowe & Lobby</h3>
+                <p>Globalne lobby czatu, tworzenie publicznych i prywatnych pokoi gier, rankingi online oraz historia potyczek.</p>
+            </div>
+            <a href="szachy6.html" class="btn" style="background:#b45309;">Otwórz Moduł 6</a>
+        </div>
     </div>
 </main>
 
-<footer>
-    Krypta Szachów & Warcabów • Zintegrowany Hub (index.html + szachy1.html + szachy2.html + szachy3.html + optimizer.js)
-</footer>
-
 <script>
-    // Synchronizacja wspólnego stanu konta między index.html a szachy1/2/3.html
-    function syncHubData() {
-        try {
-            const raw = localStorage.getItem('cryptic_chess_v3');
-            if (raw) {
-                const st = JSON.parse(raw);
-                if (st.nick) document.getElementById('hub-nick').innerText = st.nick;
-                if (st.shards !== undefined) document.getElementById('hub-shards').innerText = st.shards;
-                if (st.elo) {
-                    document.getElementById('hub-elo-chess-pvp').innerText = st.elo.chessPvp || 1200;
-                    document.getElementById('hub-elo-chess-bot').innerText = st.elo.chessBot || 1200;
-                    document.getElementById('hub-elo-checkers-pvp').innerText = st.elo.checkersPvp || 1200;
-                    document.getElementById('hub-elo-checkers-bot').innerText = st.elo.checkersBot || 1200;
-                }
-                if (st.settings && st.settings.lightTheme) {
-                    document.documentElement.setAttribute('data-theme', 'light');
-                }
-            }
-        } catch (e) {}
-    }
+function initHub() {
+    try {
+        let raw = localStorage.getItem('cryptic_chess_v3');
+        if (!raw) {
+            const initial = {
+                nick: "Szymon",
+                shards: 250,
+                elo: { chessBot: 1200, checkersBot: 1200 },
+                settings: { lightTheme: false }
+            };
+            localStorage.setItem('cryptic_chess_v3', JSON.stringify(initial));
+            raw = JSON.stringify(initial);
+        }
+        const st = JSON.parse(raw);
+        if (st.settings && st.settings.lightTheme) {
+            document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+        document.getElementById('hub-nick').innerText = st.nick || "Szymon";
+        document.getElementById('hub-shards').innerText = st.shards ?? 250;
+    } catch(e) {}
+}
 
-    function toggleHubTheme() {
-        const current = document.documentElement.getAttribute('data-theme');
-        const next = current === 'light' ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-theme', next);
-        try {
-            const raw = localStorage.getItem('cryptic_chess_v3');
-            if (raw) {
-                const st = JSON.parse(raw);
-                st.settings = st.settings || {};
-                st.settings.lightTheme = (next === 'light');
-                localStorage.setItem('cryptic_chess_v3', JSON.stringify(st));
-            }
-        } catch (e) {}
-    }
-
-    function openEmbedded(file, title) {
-        document.getElementById('hub-cards').style.display = 'none';
-        document.getElementById('hub-intro').style.display = 'none';
-        const wrap = document.getElementById('embedded-frame-wrap');
-        wrap.style.display = 'flex';
-        document.getElementById('frame-title').innerText = title;
-        document.getElementById('frame-ext-link').href = file;
-        document.getElementById('module-frame').src = file;
-    }
-
-    function closeEmbedded() {
-        document.getElementById('module-frame').src = '';
-        document.getElementById('embedded-frame-wrap').style.display = 'none';
-        document.getElementById('hub-cards').style.display = 'grid';
-        document.getElementById('hub-intro').style.display = 'flex';
-        syncHubData();
-    }
-
-    window.addEventListener('storage', syncHubData);
-    syncHubData();
+// Odświeżaj dane huba po powrocie do karty
+window.addEventListener('focus', initHub);
+initHub();
 </script>
-<!-- Połączenie z silnikiem wydajności optimizer.js -->
 <script src="optimizer.js"></script>
 </body>
 </html>
