@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Krypta — Główny Hub Gier Planszowych</title>
+    <title>Krypta — Główny Hub Rozgrywek & Lobby</title>
     <style>
         :root {
             --bg-main: #0c0a0f;
@@ -37,27 +37,32 @@
         
         main { flex-grow: 1; max-width: 1600px; width: 100%; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 28px; }
         
-        .welcome-banner { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 28px 36px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); text-align: center; }
-        .welcome-banner h1 { color: var(--text-bright); font-size: 1.8rem; margin-bottom: 8px; }
-        .welcome-banner p { font-size: 1rem; color: var(--text-main); }
+        .welcome-banner { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 28px 36px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+        .welcome-text h1 { color: var(--text-bright); font-size: 1.7rem; margin-bottom: 6px; }
+        .welcome-text p { font-size: 0.95rem; color: var(--text-main); }
 
-        /* Główne Lobby: Lewa strona Szachy, Prawa Warcaby */
-        .lobby-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
-        @media (max-width: 1100px) { .lobby-grid { grid-template-columns: 1fr; } }
+        .search-container { position: relative; width: 320px; }
+        .lobby-search { width: 100%; padding: 12px 16px 12px 42px; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-bright); border-radius: 12px; font-size: 0.95rem; outline: none; transition: 0.2s; }
+        .lobby-search:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(124,58,237,0.3); }
+        .search-icon-pos { position: absolute; left: 14px; top: 14px; font-size: 1rem; opacity: 0.6; }
 
-        .game-panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
-        .game-panel h2 { color: var(--text-bright); font-size: 1.4rem; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+        /* Siatka 3 kolumn: Szachy Desktop, Szachy Mobile, Warcaby & Sieć */
+        .lobby-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: start; }
+        @media (max-width: 1300px) { .lobby-grid { grid-template-columns: 1fr; } }
 
-        /* Lista funkcji w szachach */
-        .features-section { display: flex; flex-direction: column; gap: 10px; }
-        .features-section h4 { color: var(--text-bright); font-size: 0.95rem; margin-top: 4px; }
-        .features-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 260px; overflow-y: auto; padding-right: 4px; }
-        .feature-badge { background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 0.83rem; display: flex; flex-direction: column; gap: 2px; }
-        .feature-badge strong { color: var(--text-bright); font-size: 0.88rem; }
+        .game-panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); transition: 0.2s; }
+        .game-panel.hidden { display: none !important; }
+        .game-panel h2 { color: var(--text-bright); font-size: 1.25rem; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
 
-        .game-desc { font-size: 0.92rem; line-height: 1.5; }
+        .features-section { display: flex; flex-direction: column; gap: 8px; }
+        .features-section h4 { color: var(--text-bright); font-size: 0.9rem; }
+        .features-list { display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto; padding-right: 4px; }
+        .feature-badge { background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 0.82rem; display: flex; flex-direction: column; gap: 2px; }
+        .feature-badge strong { color: var(--text-bright); font-size: 0.85rem; }
 
-        .btn { background: var(--accent); color: #fff; border: none; padding: 14px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; text-align: center; text-decoration: none; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: block; }
+        .game-desc { font-size: 0.9rem; line-height: 1.45; }
+
+        .btn { background: var(--accent); color: #fff; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; text-align: center; text-decoration: none; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: block; }
         .btn:hover { background: var(--accent-hover); transform: translateY(-2px); }
         .btn-sec { background: var(--bg-header); color: var(--text-bright); border: 1px solid var(--border); }
         .btn-sec:hover { border-color: var(--text-main); }
@@ -75,57 +80,89 @@
 
 <main>
     <div class="welcome-banner">
-        <h1>Witaj w Głównym Hubie Krypt, Szymon!</h1>
-        <p>Wybierz preferowaną dyscyplinę na autorskiej platformie. Przejdź do pełnego pakietu szachowego lub rozpocznij starcie w warcaby.</p>
+        <div class="welcome-text">
+            <h1>Witaj w Głównym Hubie Krypt, Szymon!</h1>
+            <p>Wybierz preferowaną wersję gry lub skorzystaj z wyszukiwarki, aby szybko odnaleźć odpowiedni moduł.</p>
+        </div>
+        <div class="search-container">
+            <span class="search-icon-pos">🔍</span>
+            <input type="text" class="lobby-search" id="lobby-search-input" placeholder="Szukaj gry lub funkcji..." oninput="filterLobby()">
+        </div>
     </div>
 
     <div class="lobby-grid">
-        <!-- LEWA STRONA: SZACHY (Z PEŁNĄ LISTĄ WSZYSTKICH FUNKCJI) -->
-        <div class="game-panel">
-            <h2>♞ Kryptowe Szachy (Pakiet Ultimate)</h2>
-            <p class="game-desc">Najbardziej zaawansowany moduł strategiczny na platformie. Zawiera pełny pakiet 50 funkcji, symulator sparingów z 20 botami oraz zaawansowaną analizę partii.</p>
+        <!-- 1. SZACHY DESKTOP (MODUŁ 7) -->
+        <div class="game-panel" id="panel-chess-desk" data-keywords="szachy chess desktop komputer stockfish silnik 7 pgn boty">
+            <h2>♞ Kryptowe Szachy (Desktop)</h2>
+            <p class="game-desc">Zaawansowany moduł strategiczny z pełnym pakietem 20 botów, panelem wyszukiwania funkcji, archiwum PGN i zaawansowaną analizą.</p>
             
             <div class="features-section">
-                <h4>Wszystkie funkcje dostępne w szachach:</h4>
+                <h4>Główne funkcje:</h4>
                 <div class="features-list">
-                    <div class="feature-badge"><strong>Silnik AI & Trenerzy</strong><span>20 botów + Kokoszka i Fischer</span></div>
-                    <div class="feature-badge"><strong>Fizyczne Drag & Drop</strong><span>Chwytanie i upuszczanie bierek</span></div>
-                    <div class="feature-badge"><strong>Auto-Cofanie Błędów</strong><span>Automatyczny powrót przy faulu</span></div>
-                    <div class="feature-badge"><strong>Archiwum PGN</strong><span>Zapis i podgląd notacji partii</span></div>
-                    <div class="feature-badge"><strong>Pasek Ewaluacji Live</strong><span>Wizualna przewaga stron</span></div>
-                    <div class="feature-badge"><strong>Ostrzeżenie o Szachu</strong><span>Czerwona poświata na królu</span></div>
-                    <div class="feature-badge"><strong>Skaner PGN</strong><span>Wklejanie zapisów z turniejów</span></div>
-                    <div class="feature-badge"><strong>Akademia Debiutów</strong><span>Baza wiedzy i gambitów</span></div>
-                    <div class="feature-badge"><strong>Zegary Czasowe</strong><span>Bullet, Blitz i kontrola czasu</span></div>
-                    <div class="feature-badge"><strong>System Anti-Cheat</strong><span>Blokada oszustw i ban na nick</span></div>
+                    <div class="feature-badge"><strong>Stockfish 16 AI</strong><span>Głęboka analiza pozycji.</span></div>
+                    <div class="feature-badge"><strong>20 Botów & Trenerów</strong><span>Sparuj z Kokoszką i Fischerem.</span></div>
+                    <div class="feature-badge"><strong>Archiwum PGN</strong><span>Zapis pełnej notacji partii.</span></div>
                 </div>
             </div>
 
-            <a href="szachy7.html" class="btn" style="margin-top: auto;">Przejdź do Kryptowych Szachów (szachy7.html)</a>
+            <a href="szachy7.html" class="btn" style="margin-top: auto;">Otwórz Wersję Desktop (szachy7.html)</a>
         </div>
 
-        <!-- PRAWA STRONA: WARCABY -->
-        <div class="game-panel" style="justify-content: space-between;">
-            <div>
-                <h2>☩ Kryptowe Warcaby</h2>
-                <p class="game-desc" style="margin-bottom: 20px;">Klasyczne polskie warcaby 8x8 wzbogacone o unikalne zasady strategiczne, tryb multiplayer P2P, tradycyjną zasadę dmuchnięcia oraz bicie do tyłu przez damki.</p>
-                
-                <div class="features-section">
-                    <h4>Najważniejsze cechy warcabów:</h4>
-                    <div class="features-list" style="grid-template-columns: 1fr;">
-                        <div class="feature-badge"><strong>Zasada Dmuchnięcia</strong><span>Kary za pominięcie bicia pionka.</span></div>
-                        <div class="feature-badge"><strong>Bicie Wstecz</strong><span>Damki i zwykłe pionki w dynamicznych starciach.</span></div>
-                        <div class="feature-badge"><strong>Sieciowe Pokoje P2P</strong><span>Rozgrywka ze znajomymi przez kody sesji.</span></div>
-                    </div>
+        <!-- 2. SZACHY MOBILNE (MODUŁ 8) -->
+        <div class="game-panel" id="panel-chess-mob" data-keywords="szachy chess mobile mobilna telefon smartfon aplikacja 8">
+            <h2>📱 Kryptowe Szachy (Mobile)</h2>
+            <p class="game-desc">Wersja zoptymalizowana pod ekrany dotykowe telefonów i tabletów. Wygodne przyciski sterowania, responsywna szachownica oraz szybkie akcje.</p>
+            
+            <div class="features-section">
+                <h4>Główne funkcje:</h4>
+                <div class="features-list">
+                    <div class="feature-badge"><strong>Optymalizacja Touch</strong><span>Wygodne dotykowe sterowanie.</span></div>
+                    <div class="feature-badge"><strong>Skala Responsywna</strong><span>Dopasowanie do każdego ekranu.</span></div>
+                    <div class="feature-badge"><strong>Mobilny Asystent</strong><span>Lekki silnik na telefon.</span></div>
                 </div>
             </div>
 
-            <a href="szachy6.html" class="btn btn-sec" style="text-align: center;">Przejdź do Warcabów & Sieci</a>
+            <a href="szachy8.html" class="btn" style="background: #059669; margin-top: auto;">Otwórz Wersję Mobilną (szachy8.html)</a>
+        </div>
+
+        <!-- 3. WARCABY & SIEĆ (MODUŁ 6) -->
+        <div class="game-panel" id="panel-checkers" data-keywords="warcaby checkery p2p sieciowe dmuchnięcie pokoje czat 6 sxsus admin">
+            <h2>☩ Kryptowe Warcaby & Sieć</h2>
+            <p class="game-desc">Klasyczne polskie warcaby 8x8 z zasadą dmuchnięcia, biciem wstecz, globalnym czatem społeczności oraz pokojami sieciowymi P2P i Panelem Administratora.</p>
+            
+            <div class="features-section">
+                <h4>Główne funkcje:</h4>
+                <div class="features-list">
+                    <div class="feature-badge"><strong>Zasada Dmuchnięcia</strong><span>Kary za pominięcie bicia.</span></div>
+                    <div class="feature-badge"><strong>Bicie Wstecz</strong><span>Damki w dynamicznych starciach.</span></div>
+                    <div class="feature-badge"><strong>Sieciowe Pokoje P2P</strong><span>Rozgrywka przez kody sesji.</span></div>
+                </div>
+            </div>
+
+            <a href="szachy6.html" class="btn btn-sec" style="text-align: center; margin-top: auto;">Otwórz Warcaby & Sieć (szachy6.html)</a>
         </div>
     </div>
 </main>
 
 <script>
+function filterLobby() {
+    const query = document.getElementById('lobby-search-input').value.toLowerCase();
+    const panels = [
+        document.getElementById('panel-chess-desk'),
+        document.getElementById('panel-chess-mob'),
+        document.getElementById('panel-checkers')
+    ];
+
+    panels.forEach(panel => {
+        const keywords = panel.getAttribute('data-keywords') + " " + panel.innerText.toLowerCase();
+        if (!query || keywords.includes(query)) {
+            panel.classList.remove('hidden');
+        } else {
+            panel.classList.add('hidden');
+        }
+    });
+}
+
 function initHubData() {
     try {
         let raw = localStorage.getItem('cryptic_chess_v3');
